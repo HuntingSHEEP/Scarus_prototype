@@ -19,4 +19,29 @@ public class GameObject {
         dynamics = new Dynamics();
         layer = 0;
     }
+    public String toString(){
+        return String.format("Object XY [%.2f, %.2f]", location.position.x, location.position.y);
+    }
+
+    public void moveBy(double dx, double dy){
+        location.position.x += dx;
+        location.position.y += dy;
+    }
+
+    public void setVelocity(Vector3D v) {
+        dynamics.v = v;
+    }
+    public void addVelocity(Vector3D v) {
+        dynamics.v.add(v);
+    }
+
+    public void setAcceleration(Vector3D a) {
+        dynamics.a = a;
+    }
+    public void addAcceleration(Vector3D a) {
+        dynamics.a.add(a);
+    }
+
+
+
 }

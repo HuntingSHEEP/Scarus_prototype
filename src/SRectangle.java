@@ -24,6 +24,13 @@ public class SRectangle extends GameObject{
         this.type = myType;
     }
 
+    public void updateSkin(){
+        this.skin = new Rectangle(
+                (int) (location.position.x.intValue() -  (width/2)),
+                (int) (location.position.y.intValue() -  (height/2)),
+                (int) width, (int) height);
+    }
+
     public Vector3D getLUpperVertex(){
         return new Vector3D(location.position.x - width/2,location.position.y+height/2);
     }
@@ -39,4 +46,10 @@ public class SRectangle extends GameObject{
     public Vector3D getLLowerVertex(){
         return new Vector3D(location.position.x - width/2,location.position.y-height/2);
     }
+
+    public Vector3D getGeometricMiddle() {
+        return location.position;
+    }
+
+
 }

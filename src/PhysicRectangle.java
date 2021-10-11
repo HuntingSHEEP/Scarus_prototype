@@ -18,7 +18,6 @@ public class PhysicRectangle extends Rectangle implements PhysicObject{
     public void moveBy(double dx, double dy) {
         X += dx;
         Y += dy;
-        updateRectPos();
     }
 
     private void updateRectPos() {

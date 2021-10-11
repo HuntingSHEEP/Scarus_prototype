@@ -51,4 +51,8 @@ class Vector3D {
         return sqrt(x*x + y*y + z*z);
     }
 
+    public String toString(){
+        return String.format("Vector [%.2f, %.2f]",x,y);
+    }
+
 }
