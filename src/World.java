@@ -40,7 +40,6 @@ public class World {
             Vector3D LL = ((SRectangle) GO).getLLowerVertex();
             Vector3D mM = GO.location.position;
 
-
             Vector3D chLU = new Vector3D((int) (LU.y/chunkPixelWidth + size), (int) (LU.x/chunkPixelWidth + size));
             Vector3D chRU = new Vector3D((int) (RU.y/chunkPixelWidth + size), (int) (RU.x/chunkPixelWidth + size));
             Vector3D chRL = new Vector3D((int) (RL.y/chunkPixelWidth + size), (int) (RL.x/chunkPixelWidth + size));

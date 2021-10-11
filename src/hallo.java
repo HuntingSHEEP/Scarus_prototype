@@ -1,6 +1,4 @@
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class hallo {
@@ -20,29 +18,35 @@ public class hallo {
                 kwa.height = 20;
                 System.out.println(((SRectangle) anonim).height);
 
-                World world = new World(2, 80);
+                World world = new World(20, 800);
 
-                SRectangle bohater = new SRectangle(59, 30, 0, 40, 40);
-                SRectangle platforma = new SRectangle(60, 120,0, 80, 20);
-                SRectangle kwadracik = new SRectangle(0,0,0,50,50);
+                SRectangle bohater   = new SRectangle(59,30, 0, 40, 40);
+                SRectangle platforma = new SRectangle(60,120,0, 580, 20);
+                SRectangle platforma1 = new SRectangle(-320,20,0, 580, 20);
+                SRectangle platforma2 = new SRectangle(160,-100,0, 580, 20);
+
+                Camera camera = new Camera(0,0,900, 700, new Vector3D(-400, -300));
 
                 world.add(bohater);
                 world.add(platforma);
+                world.add(platforma1);
+                world.add(platforma2);
 
                 bohater.setAcceleration(new Vector3D(0, 9, 0));
 
                 SCircle kolko = new SCircle(0,0,0,25);
-
-                JPanel myPanel = new MyPanel(bohater, platforma, kwadracik, kolko);
+                MyPanel myPanel = new MyPanel(world, camera, bohater);
                 frame.add(myPanel);
 
-                OdswiezanieEkranu odswiezanieEkranu = new OdswiezanieEkranu();
-                odswiezanieEkranu.setPanel(myPanel);
-                odswiezanieEkranu.start();
+
+                RenderEngine renderEngine = new RenderEngine();
+                renderEngine.setPanel(myPanel);
+                renderEngine.setWorld(world);
+                renderEngine.setCamera(camera);
+                renderEngine.start();
 
                 SilnikFizyki silnikFizyki = new SilnikFizyki();
-                silnikFizyki.add(bohater, platforma);
-
+                silnikFizyki.setWorld(world);
                 silnikFizyki.start();
             }
         });

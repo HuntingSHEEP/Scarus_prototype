@@ -6,6 +6,7 @@ public class GameObject {
     Shape skin;
     String type;
     int layer;
+    //TODO: KONIECZNIE POLE COLLIDERA GŁÓWNEGO! albo rozwiązać to interfejsem
 
 
     GameObject(){

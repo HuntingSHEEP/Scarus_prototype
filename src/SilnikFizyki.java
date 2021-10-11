@@ -1,7 +1,7 @@
 import java.awt.*;
 
 public class SilnikFizyki extends Thread {
-    private GameObject obiekt, platforma;
+    private World world;
     private double deltaTime;
     final long INTERVAL = (int) (1000000);
 
@@ -13,24 +13,66 @@ public class SilnikFizyki extends Thread {
     public void run(){
 
         System.out.println("Uruchomiono silnik fizyki");
+        System.out.println("Objects in world: " + world.gameObjectList.size());
+
         while(true){
-            calculateDynamics(obiekt, deltaTime);
-            calculateDynamics(platforma, deltaTime);
+            //dla każdego obiektu zdefiniowanego w świecie
+            GameObject someGameObject;
+            for (int i = 0; i < world.gameObjectList.size(); i++) {
+                someGameObject = world.gameObjectList.get(i);
 
-            if(collision((SRectangle) obiekt,(SRectangle) platforma))
-                collisionResponse((SRectangle) obiekt,(SRectangle) platforma);
+                calculateDynamics(someGameObject, deltaTime);
+                boolean collision = calculateCollisions(someGameObject, world);
+
+                if(collision){
+                    world.deregisterFromChunks(someGameObject);
+                    world.registerInChunks(someGameObject);
+                }
 
 
 
+            }
 
+            /*
+            //TODO: obliczenia powinny byc wykonywane dla wszystkich obiektów w tym samym momencie, np poprzez stworzenie listy danych LOKALIZACJI dla każdego z obiektóœ i uakualnienie dopiero na końcu
 
-            //TODO: przenieść sekcję uaktualniania skórki do silnika renderowania
-            ((SRectangle) obiekt).updateSkin();
-            ((SRectangle) platforma).updateSkin();
 
             System.out.println(String.format("XY [%.2f, %.2f]   V [%.2f, %.2f]   A [%.2f, %.2f]", obiekt.location.position.x, obiekt.location.position.y, obiekt.dynamics.v.x, obiekt.dynamics.v.y, obiekt.dynamics.a.x, obiekt.dynamics.a.y));
+             */
+
             waitSomeTime();
+
         }
+    }
+
+    /**
+     *
+     * @param someGameObject
+     * @param world
+     * @return True if some collisions detected;
+     */
+    private boolean calculateCollisions(GameObject someGameObject, World world) {
+        GameObject anotherGameObject;
+        boolean collidedWithAnObject = false;
+
+        for (int i = 0; i < world.gameObjectList.size(); i++) {
+            anotherGameObject = world.gameObjectList.get(i);
+            if(someGameObject != anotherGameObject){
+
+                if(SRectangle.myType.compareTo(someGameObject.type) == 0){
+                    if(SRectangle.myType.compareTo(anotherGameObject.type) == 0)
+
+                        if(collision((SRectangle) someGameObject,(SRectangle) anotherGameObject)){
+                            collidedWithAnObject = true;
+                            collisionResponse((SRectangle) someGameObject,(SRectangle) anotherGameObject);
+                        }
+
+
+                }
+
+            }
+        }
+        return collidedWithAnObject;
     }
 
     private void waitSomeTime() {
@@ -40,10 +82,6 @@ public class SilnikFizyki extends Thread {
         do{
             end = System.nanoTime();
         }while(start + INTERVAL >= end);
-    }
-    public void add(GameObject obiekt, GameObject platforma){
-        this.obiekt = obiekt;
-        this.platforma = platforma;
     }
 
     public void calculateDynamics(GameObject gameObject , double deltaTime) {
@@ -115,7 +153,8 @@ public class SilnikFizyki extends Thread {
         double q = Math.abs(qVector.y / qVector.x);
         double k = Math.abs(w.y / w.x);
 
-        double bounceScale = 0.3;
+        //TODO: dodać pole ciało sprężyste!
+        double bounceScale = 1;
 
         if(q <= k){
             //REACT ON Y-AXIS
@@ -143,5 +182,9 @@ public class SilnikFizyki extends Thread {
         }
 
 
+    }
+
+    public void setWorld(World world) {
+        this.world = world;
     }
 }

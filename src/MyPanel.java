@@ -4,63 +4,85 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
 public class MyPanel extends JPanel implements KeyListener{
-    GameObject bohater, platforma;
+    World world;
+    Graphics graphics;
+    boolean repaint = false;
     char znak;
-    GameObject kwadrat;
-    GameObject kolko;
+    Vector3D cameraVector;
+    Camera camera;
+    GameObject bohater;
 
-    MyPanel(GameObject obiekt,GameObject platforma, GameObject kwarat, GameObject kolko){
+    MyPanel(World world, Camera camera, GameObject bohater){
         super();
-        bohater = obiekt;
-        this.platforma = platforma;
-        this.kwadrat = kwarat;
-        this.kolko = kolko;
+        this.world = world;
+        this.camera = camera;
+        this.bohater = bohater;
 
         setBackground(new Color(180, 219, 25));
         setLayout(null);
         setFocusable(true);
-
         addKeyListener(this);
     }
 
+
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+        graphics = g;
+        if(repaint)
+            super.paintComponent(g);
+
         requestFocus();
         Graphics2D g2d = (Graphics2D) g;
 
-        //rysowanie bohatera
-        g2d.setPaint(new Color(5, 211, 236));
-        g2d.fill(bohater.skin);
+        GameObject someGameObject;
+        for (int i = 0; i < world.gameObjectList.size(); i++) {
+            someGameObject = world.gameObjectList.get(i);
 
-        //rysowanie platformy
-        g2d.setPaint(new Color(1, 121, 118));
-        g2d.fill(platforma.skin);
+            if(SRectangle.myType.compareTo(someGameObject.type) == 0){
+                //((SRectangle) someGameObject).updateSkin();
+                ((SRectangle) someGameObject).moveByCameraVector(cameraVector);
+            }
 
-        //rysowanie kwadratu
-        g2d.setPaint(new Color(221, 1, 89));
-        g2d.fill(kwadrat.skin);
 
-        //rysowanie kolka
-        g2d.setPaint(new Color(1, 45, 221));
-        g2d.fill(kolko.skin);
+            g2d.setPaint(new Color(148, 1, 221));
+            g2d.fill(someGameObject.skin);
+        }
     }
 
     @Override
     public void keyTyped(KeyEvent e) {
         znak = e.getKeyChar();
 
+        int skok = 5;
+
+
 
         if(znak == 'w'){
-            bohater.dynamics.a.y = -4.0;
+            camera.location.position.y  += -skok;
+            bohater.location.position.y += -skok;
+            //camera.location = bohater.location;
         }else if(znak == 's'){
-            bohater.dynamics.a.y = 4.0;
+            camera.location.position.y  += skok;
+            bohater.location.position.y += skok;
+            //camera.location = bohater.location;
         }else if(znak == 'a'){
-            bohater.dynamics.a.x = -2.0;
+            camera.location.position.x  += -skok;
+            bohater.location.position.x += -skok;
+            //camera.location = bohater.location;
         }else if(znak == 'd') {
-            bohater.dynamics.a.x = 2.0;
+            camera.location.position.x  += skok;
+            bohater.location.position.x += skok;
+            //camera.location = bohater.location;
         }
+
+        if(e.getKeyCode() == 38){
+
+        }
+
+
         System.out.println("TYPED " + e.getKeyChar() + " ID "+e.getKeyCode());
+
+
     }
 
     @Override
@@ -70,6 +92,7 @@ public class MyPanel extends JPanel implements KeyListener{
 
     @Override
     public void keyReleased(KeyEvent e) {
+        /*
         System.out.println("RELEASED " + e.getKeyChar() + " ID "+e.getKeyCode());
 
         if(znak == 'w'){
@@ -81,5 +104,11 @@ public class MyPanel extends JPanel implements KeyListener{
         }else if(znak == 'd') {
             bohater.dynamics.a.x = 0.0;
         }
+
+         */
+    }
+
+    public void setCameraVector(Vector3D cameraVector) {
+        this.cameraVector = cameraVector;
     }
 }

@@ -31,6 +31,7 @@ public class SRectangle extends GameObject{
                 (int) width, (int) height);
     }
 
+
     public Vector3D getLUpperVertex(){
         return new Vector3D(location.position.x - width/2,location.position.y+height/2);
     }
@@ -52,4 +53,10 @@ public class SRectangle extends GameObject{
     }
 
 
+    public void moveByCameraVector(Vector3D cameraVector) {
+        this.skin = new Rectangle(
+                (int) (location.position.x.intValue() -  (width/2) + cameraVector.x),
+                (int) (location.position.y.intValue() -  (height/2) + cameraVector.y),
+                (int) width, (int) height);
+    }
 }
