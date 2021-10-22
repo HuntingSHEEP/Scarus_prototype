@@ -45,6 +45,8 @@ public class World {
             Vector3D chRL = new Vector3D((int) (RL.y/chunkPixelWidth + size), (int) (RL.x/chunkPixelWidth + size));
             Vector3D chLL = new Vector3D((int) (LL.y/chunkPixelWidth + size), (int) (LL.x/chunkPixelWidth + size));
             Vector3D mChk = new Vector3D((int) (mM.y/chunkPixelWidth + size), (int) (mM.x/chunkPixelWidth + size));
+
+            /*
             System.out.println(String.format("DATA: size [%d]  chunkPixelWidth [%d]", size, chunkPixelWidth));
             System.out.println(String.format(
                             "LU %s -> CHUNK %s\n" +
@@ -53,13 +55,15 @@ public class World {
                             "LL %s -> CHUNK %s\n" +
                             "mM %s -> CHUNK %s", LU, chLU, RU, chRU, RL, chRL, LL,chLL, mM, mChk));
 
+             */
+
             Vector3D[] chnkList = {chLU, chRU, chRL, chLL, mChk};
 
 
             for(int i=0; i<chnkList.length; i++)
                 if(! chunks[chnkList[i].x.intValue()][chnkList[i].y.intValue()].lista.contains(GO)){
                     chunks[chnkList[i].x.intValue()][chnkList[i].y.intValue()].append(GO);
-                    System.out.println(String.format("Added %s to chunk [%d, %d]",GO,chnkList[i].x.intValue(),chnkList[i].y.intValue()));
+                    //System.out.println(String.format("Added %s to chunk [%d, %d]",GO,chnkList[i].x.intValue(),chnkList[i].y.intValue()));
                 }
 
             //TODO: sprawdzanie, czy wierzchołek nie wykracza poza zakres świata
@@ -75,7 +79,7 @@ public class World {
             for(int y=0; y<size*2; y++)
                 if (chunks[y][x].lista.contains(gameObject)){
                     chunks[y][x].lista.remove(gameObject);
-                    System.out.println(String.format("Deregistered %s from CHUNK [%d, %d]", gameObject, y, x));
+                    //System.out.println(String.format("Deregistered %s from CHUNK [%d, %d]", gameObject, y, x));
                 }
     }
 

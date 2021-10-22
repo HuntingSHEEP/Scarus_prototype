@@ -3,6 +3,7 @@ import java.awt.*;
 public class SRectangle extends GameObject{
     public static final String myType = "SRECTANGLE";
     double width, height;
+    double sphereRadius;
 
 
     SRectangle(){
@@ -13,7 +14,10 @@ public class SRectangle extends GameObject{
                 (int) (location.position.x.intValue() -  (width/2)),
                 (int) (location.position.y.intValue() -  (height/2)),
                 (int) width, (int) height);
+
         this.type = myType;
+        updateSphereRadius();
+        setUpMeshCollider();
     }
 
     SRectangle(double x, double y, double z, double width, double height){
@@ -22,6 +26,20 @@ public class SRectangle extends GameObject{
         this.height = height;
         this.skin = new Rectangle((int) (x-(width/2)), (int) (y - (height/2)), (int) width, (int) height);
         this.type = myType;
+        updateSphereRadius();
+        setUpMeshCollider();
+    }
+
+    private void setUpMeshCollider() {
+        meshCollider = new MeshCollider();
+
+        Vector3D A = new Vector3D(-width/2, -height/2);
+        Vector3D B = new Vector3D(-width/2, height/2);
+        Vector3D C = new Vector3D(width/2, height/2);
+        Vector3D D = new Vector3D(width/2, -height/2);
+
+        meshCollider.add(new Triangle(A, B, C));
+        meshCollider.add(new Triangle(A, C, D));
     }
 
     public void updateSkin(){
@@ -58,5 +76,13 @@ public class SRectangle extends GameObject{
                 (int) (location.position.x.intValue() -  (width/2) + cameraVector.x),
                 (int) (location.position.y.intValue() -  (height/2) + cameraVector.y),
                 (int) width, (int) height);
+    }
+
+    public double getSphereRadius() {
+        return sphereRadius;
+    }
+
+    public void updateSphereRadius(){
+        sphereRadius = Math.sqrt(width*width + height*height) / 2;
     }
 }

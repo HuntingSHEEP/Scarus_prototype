@@ -60,19 +60,79 @@ public class SilnikFizyki extends Thread {
             if(someGameObject != anotherGameObject){
 
                 if(SRectangle.myType.compareTo(someGameObject.type) == 0){
-                    if(SRectangle.myType.compareTo(anotherGameObject.type) == 0)
+                    SRectangle sRectObj = (SRectangle) someGameObject;
+                    if(SRectangle.myType.compareTo(anotherGameObject.type) == 0){
+                        SRectangle aRectObj = (SRectangle) anotherGameObject;
 
-                        if(collision((SRectangle) someGameObject,(SRectangle) anotherGameObject)){
-                            collidedWithAnObject = true;
-                            collisionResponse((SRectangle) someGameObject,(SRectangle) anotherGameObject);
+                        if(sphereCollision(sRectObj, aRectObj)){
+                            if(meshCollision(sRectObj,  aRectObj)){
+                                collidedWithAnObject = true;
+                                /* 0) wykrycie kolizji
+                                    1) wyciągnięcie obiektu z kolizji - czy na pewno?
+                                    2) modyfikacja wektorów przyspieszeń (akcja - reakcja)
+                                    3) odbicie prędkości
+                                    4) obliczenie przesunięcia
+                                    5) WYCOFANIE modyfikacji wektorów przyspieszeń
+                                 */
+                                collisionResponse((SRectangle) anotherGameObject, (SRectangle) someGameObject);
+                            }
+
+
                         }
 
 
+                    }
                 }
-
             }
         }
         return collidedWithAnObject;
+    }
+
+    private boolean meshCollision(SRectangle rect0, SRectangle rect1) {
+        if(triangleCollision2D(rect0, rect1))
+            return true;
+
+     //   if(triangleCollision2D(rect1, rect0))
+     //       return true;
+
+
+        return false;
+    }
+
+    private boolean triangleCollision2D(SRectangle rect0, SRectangle rect1) {
+        //TODO: TO JEST NA RAZIE JEDYNIE DLA 2D - UWZGLĘDNIĆ 3D
+        int DRIFT = 1;
+
+        for(int i=0; i<rect0.meshCollider.triangleList.size(); i++){
+            Triangle tri0 = rect0.meshCollider.triangleList.get(i);
+            double poleT0 = tri0.field;
+
+            for(int k=0; k<rect1.meshCollider.triangleList.size(); k++){
+                Triangle triangle1 = rect1.meshCollider.triangleList.get(k);
+                double P0 = tri0.fieldInRelationToPoint(rect0.location.position, triangle1.getVerticeA(rect1.location.position));
+                double P1 = tri0.fieldInRelationToPoint(rect0.location.position, triangle1.getVerticeB(rect1.location.position));
+                double P2 = tri0.fieldInRelationToPoint(rect0.location.position, triangle1.getVerticeC(rect1.location.position));
+
+                boolean test0 = ((poleT0 - DRIFT) < P0) && (P0 < (poleT0 + DRIFT));
+                boolean test1 = ((poleT0 - DRIFT) < P1) && (P1 < (poleT0 + DRIFT));
+                boolean test2 = ((poleT0 - DRIFT) < P2) && (P2 < (poleT0 + DRIFT));
+
+                //System.out.println("poleT: "+poleT0+" ; p0 "+tri0.fieldInRelationToPoint(rect0.location.position, triangle1.getVerticeA(rect1.location.position))+" ; p1 "+tri0.fieldInRelationToPoint(rect0.location.position, triangle1.getVerticeB(rect1.location.position))+" ; p2 "+tri0.fieldInRelationToPoint(rect0.location.position, triangle1.getVerticeC(rect1.location.position)) + "    TEST0: "+test0+"  TEST1: "+test1+"  TEST2: "+test2);
+                //System.out.println("TEST0: "+test0+"  TEST1: "+test1+"  TEST2: "+test2);
+
+                if(test0 || test1 || test2)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean sphereCollision(SRectangle sGameObj, SRectangle aGameObj) {
+        double sRadius = sGameObj.getSphereRadius();
+        double aRadius = aGameObj.getSphereRadius();
+        double centersDistance = Vector3D.distance(sGameObj.location.position, aGameObj.location.position);
+
+        return (centersDistance <= (sRadius + aRadius));
     }
 
     private void waitSomeTime() {
@@ -147,6 +207,7 @@ public class SilnikFizyki extends Thread {
 
 
     public void collisionResponse(SRectangle rect, SRectangle rectB) {
+        System.out.println("Collision Response");
         //wersja mocno uproszczona
         Vector3D w = getWeightPointsVector(rect, rectB);
         Vector3D qVector = new Vector3D(rect.width/2 + rectB.width/2, rect.height/2 + rectB.height/2);
@@ -183,6 +244,8 @@ public class SilnikFizyki extends Thread {
 
 
     }
+
+
 
     public void setWorld(World world) {
         this.world = world;

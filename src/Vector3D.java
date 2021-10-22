@@ -24,6 +24,18 @@ class Vector3D {
         this.z = z;
     }
 
+    public static double distance(Vector3D position, Vector3D position1) {
+        return Vector3D.length(Vector3D.difference(position, position1));
+    }
+
+    private static double length(Vector3D difference) {
+        return Math.sqrt(difference.x*difference.x + difference.y*difference.y + difference.z*difference.z);
+    }
+
+    private static Vector3D difference(Vector3D position, Vector3D position1) {
+        return new Vector3D(position.x - position1.x, position.y - position1.y, position.z - position1.z);
+    }
+
     public void add(Vector3D vector){
         this.x += vector.x;
         this.y += vector.y;
