@@ -32,8 +32,16 @@ class Vector3D {
         return Math.sqrt(difference.x*difference.x + difference.y*difference.y + difference.z*difference.z);
     }
 
-    private static Vector3D difference(Vector3D position, Vector3D position1) {
+    public static Vector3D difference(Vector3D position, Vector3D position1) {
         return new Vector3D(position.x - position1.x, position.y - position1.y, position.z - position1.z);
+    }
+
+    public static Vector3D cross(Vector3D a, Vector3D b){
+        return new Vector3D(a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x);
+    }
+
+    public static Vector3D tripleXProduct(Vector3D a, Vector3D b, Vector3D c){
+        return Vector3D.cross(a ,Vector3D.cross(b, c));
     }
 
     public void add(Vector3D vector){
@@ -44,6 +52,21 @@ class Vector3D {
 
     public static Vector3D addVectors(Vector3D v1, Vector3D v2){
         return new Vector3D(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z);
+    }
+
+    public static double dot(Vector3D v1, Vector3D v2){
+        return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
+    }
+
+    public static Vector3D add(Vector3D v1, Vector3D v2){
+        return new Vector3D(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z);
+    }
+
+    /**
+     * Returns a new Vector3D and doesn't change the input vector!
+     */
+    public static Vector3D multiply(Vector3D v, double scale){
+        return new Vector3D(v.x*scale, v.y*scale, v.z*scale);
     }
 
     public void add(double x, double y){
@@ -61,7 +84,7 @@ class Vector3D {
         this.x *= scale;
         this.y *= scale;
         this.z *= scale;
-
+    //TODO tak nie może być - trzeba jasno oddzielić działanie na konkretnym obiekcie od zwykłego przeliczaniatłu
         return new Vector3D(this.x, this.y, this.z);
     }
 
@@ -70,7 +93,7 @@ class Vector3D {
     }
 
     public String toString(){
-        return String.format("Vector [%.2f, %.2f]",x,y);
+        return String.format("Vector [%.2f, %.2f, %.2f]",x,y,z);
     }
 
 }

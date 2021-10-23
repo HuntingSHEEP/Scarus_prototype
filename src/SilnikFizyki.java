@@ -1,9 +1,12 @@
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SilnikFizyki extends Thread {
     private World world;
     private double deltaTime;
     final long INTERVAL = (int) (1000000);
+    Vector3D direction = new Vector3D();
 
 
     public SilnikFizyki(){
@@ -89,15 +92,144 @@ public class SilnikFizyki extends Thread {
     }
 
     private boolean meshCollision(SRectangle rect0, SRectangle rect1) {
-        if(triangleCollision2D(rect0, rect1))
+       // if(triangleCollision2D(rect0, rect1))
+        //
+        //    return true;
+
+        if (gjk(rect0, rect1))
             return true;
+
 
      //   if(triangleCollision2D(rect1, rect0))
      //       return true;
 
-
         return false;
     }
+
+
+
+    public boolean gjk(SRectangle rect0, SRectangle rect1){
+        List<Vector3D> vertices = new ArrayList<Vector3D>();
+        direction = new Vector3D();
+
+        int result = EvolveResult.StillEvolving;
+        while(result == EvolveResult.StillEvolving){
+            result = evolveSimplex(vertices, rect0, rect1);
+            //System.out.println("after support " + direction );
+        }
+        if(result == EvolveResult.FoundIntersection)
+            System.out.println("ZNALEZIONO PRZECIĘCIE: " + result);
+
+
+        return result == EvolveResult.FoundIntersection;
+    }
+
+    private boolean addSupport(Vector3D direction, List<Vector3D> vertices, SRectangle rect0, SRectangle rect1 ){
+        //System.out.println("Before support " + direction );
+        Vector3D newVertice = Vector3D.difference(rect0.support(direction), rect1.support(Vector3D.multiply(direction, -1)) );
+        vertices.add(newVertice);
+        //System.out.println("VERTICE: " + newVertice);
+        return Vector3D.dot(direction, newVertice) >= 0;
+    }
+
+    private class EvolveResult{
+        final static int NoIntersection = 0;
+        final static int FoundIntersection = 1;
+        final static int StillEvolving = 2;
+    }
+
+    private int evolveSimplex(List<Vector3D> vertices, SRectangle rect0, SRectangle rect1){
+        switch (vertices.size()){
+            case 0: {
+                direction = Vector3D.difference(rect1.location.position, rect0.location.position);
+                break;
+            }
+            case 1: {
+                direction.multiply(-1);
+                break;
+            }
+            case 2: {
+
+                Vector3D b = vertices.get(1);
+                Vector3D c = vertices.get(0);
+
+                Vector3D cb= Vector3D.difference(b, c);
+                //Vector3D c0= c.multiply(-1);
+                Vector3D c0= Vector3D.multiply(c, -1);
+
+                direction = Vector3D.cross(cb ,Vector3D.cross(c0, cb));
+                //System.out.println("CASE 2 DIRECTION: "+direction);
+
+                //DO TEGO MIEJSCA WSZYSTKO SIĘ ZGADZA, PUNKTY MINKOWSKIEGO POPRAWNIE WYZNACZONE
+
+                //Vector3D vertice = Vector3D.difference(rect0.support(direction), rect1.support(direction.multiply(-1)));
+                //vertices.add(vertice);
+                break;
+            }
+
+            case 3: {
+                Vector3D a = vertices.get(2);
+                Vector3D b = vertices.get(1);
+                Vector3D c = vertices.get(0);
+
+
+                //Vector3D a0 = a.multiply(-1);
+                Vector3D a0 = Vector3D.multiply(a, -1);
+                Vector3D ab = Vector3D.difference(b, a);
+                Vector3D ac = Vector3D.difference(c, a);
+/*
+                System.out.println("a : " +a);
+                System.out.println("b : " +b);
+                System.out.println("c : " +c);
+
+                System.out.println("a0 : " +a0);
+                System.out.println("ab : " +ab);
+                System.out.println("ac : " +ac);
+
+                DO TEGO MOMENTU DANE a, b, c oraz vektory a0, ab, ac SIĘ ZGADZAJĄ
+ */
+
+                Vector3D acPerp = Vector3D.tripleXProduct(ac, ab, ac);
+                Vector3D abPerp = Vector3D.tripleXProduct(ab, ac, ab);
+
+                double dotAB = Vector3D.dot(abPerp, a0);
+                double dotAC = Vector3D.dot(acPerp, a0);
+
+               // System.out.println("DOT pAB " + dotAB);
+               // System.out.println("DOT pAC " + dotAC);
+
+                if(Vector3D.dot(abPerp, a0) < 0){
+                    //TODO a co z zerem? - skoro dot dodatni (nieujemny) dwóch wektorow mowi, ze są w tym samym kierunku, to nalezy zrobić dot() >= 0 - uwzględnenie krawędzi
+                    vertices.remove(c);
+                    direction = Vector3D.multiply(abPerp, -1) ; //* -1
+                    //Vector3D vertice = Vector3D.difference(rect0.support(direction), rect1.support(direction.multiply(-1)));
+                    //vertices.add(vertice);
+                }
+                else if(Vector3D.dot(acPerp, a0) < 0){
+                    vertices.remove(b);
+                    direction = Vector3D.multiply(acPerp, -1);
+                    //Vector3D vertice = Vector3D.difference(rect0.support(direction), rect1.support(direction.multiply(-1)));
+                    //vertices.add(vertice);
+                }
+                else {
+                    //oba doty są dodatnie, znaczy środek leży w trójkącie!
+                    //containsOrigin = true;
+                    //System.out.println("DOT pAB " + Vector3D.dot(abPerp, a0));
+                    //System.out.println("DOT pAC " + Vector3D.dot(acPerp, a0));
+                    return  EvolveResult.FoundIntersection;
+                }
+
+                //System.out.println("CASE 3 DIRECTION: "+direction);
+
+                break;
+            }
+        }
+
+        return addSupport(direction, vertices, rect0, rect1) ? EvolveResult.StillEvolving : EvolveResult.NoIntersection;
+
+    }
+
+
 
     private boolean triangleCollision2D(SRectangle rect0, SRectangle rect1) {
         //TODO: TO JEST NA RAZIE JEDYNIE DLA 2D - UWZGLĘDNIĆ 3D
@@ -207,7 +339,7 @@ public class SilnikFizyki extends Thread {
 
 
     public void collisionResponse(SRectangle rect, SRectangle rectB) {
-        System.out.println("Collision Response");
+        //System.out.println("Collision Response");
         //wersja mocno uproszczona
         Vector3D w = getWeightPointsVector(rect, rectB);
         Vector3D qVector = new Vector3D(rect.width/2 + rectB.width/2, rect.height/2 + rectB.height/2);

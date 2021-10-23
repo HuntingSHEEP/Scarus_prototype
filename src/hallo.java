@@ -20,21 +20,19 @@ public class hallo {
 
                 World world = new World(20, 800);
 
-                SRectangle bohater   = new SRectangle(100,40, 0, 40, 40);
-                SRectangle platforma = new SRectangle(120,120, 0, 200, 20);
+                SRectangle bohater   = new SRectangle(50,0, 0, 30, 30);
+                SRectangle platforma = new SRectangle(100,130, 0, 260, 20);
                 SRectangle platforma1 = new SRectangle(-320,20,0, 580, 20);
                 SRectangle platforma2 = new SRectangle(160,-100,0, 580, 20);
 
                 Camera camera = new Camera(0,0,900, 700, new Vector3D(-400, -300));
-
-
 
                 world.add(bohater);
                 world.add(platforma);
                 world.add(platforma1);
                 world.add(platforma2);
 
-                bohater.setAcceleration(new Vector3D(0, 9, 0));
+                bohater.setAcceleration(new Vector3D(0, 5, 0));
 
                 SCircle kolko = new SCircle(0,0,0,25);
                 MyPanel myPanel = new MyPanel(world, camera, bohater);
@@ -52,8 +50,41 @@ public class hallo {
                 silnikFizyki.start();
 
                 //triangleCollision2D(bohater, platforma);
+
+                //trojkatZawieraPunkt00(new Vector3D(0,2,0), new Vector3D(3,1,0), new Vector3D(-3,1,0));
+                //trojkatZawieraPunkt00(new Vector3D(0,2,0), new Vector3D(-33,33,0), new Vector3D(-3,-3,0));
+                //System.out.println(          Vector3D.dot(Vector3D.tripleXProduct(new Vector3D(3, -3, 0), new Vector3D(1,0,0), new Vector3D(3, -3, 0)), new Vector3D(3,-3))      );
             }
         });
+
+    }
+    static void trojkatZawieraPunkt00(Vector3D a, Vector3D b, Vector3D c){
+        System.out.println("hallo");
+        Vector3D a0 = a.multiply(-1);
+        Vector3D ab = Vector3D.difference(b, a);
+        Vector3D ac = Vector3D.difference(c, a);
+
+        System.out.println("a0 " + a0 );
+        System.out.println("ab " + ab );
+        System.out.println("ac " + ac );
+
+        Vector3D abPerp = Vector3D.tripleXProduct(ab, ac, ab);
+        Vector3D acPerp = Vector3D.tripleXProduct(ac, ab, ac);
+        System.out.println("pAB " + abPerp);
+        System.out.println("pAC " + acPerp);
+
+        System.out.println("DOT pAB " + Vector3D.dot(abPerp, a0));
+        System.out.println("DOT pAC " + Vector3D.dot(acPerp, a0));
+
+        if(Vector3D.dot(abPerp, a0) < 0){
+
+        }
+        else if(Vector3D.dot(acPerp, a0) < 0){
+
+        }
+        else {
+            System.out.println("Trójkąt zawiera środek układu!");
+        }
 
     }
 
