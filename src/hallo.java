@@ -20,8 +20,8 @@ public class hallo {
 
                 World world = new World(20, 800);
 
-                SRectangle bohater   = new SRectangle(50,0, 0, 30, 30);
-                SRectangle platforma = new SRectangle(100,130, 0, 260, 20);
+                SRectangle bohater   = new SRectangle(100,80, 0, 40, 40);
+                SRectangle platforma = new SRectangle(120,150, 0, 250, 60);
                 SRectangle platforma1 = new SRectangle(-320,20,0, 580, 20);
                 SRectangle platforma2 = new SRectangle(160,-100,0, 580, 20);
 
@@ -48,6 +48,14 @@ public class hallo {
                 SilnikFizyki silnikFizyki = new SilnikFizyki();
                 silnikFizyki.setWorld(world);
                 silnikFizyki.start();
+
+                silnikFizyki.GJK(bohater, platforma);
+
+                /*
+                System.out.println("V a " + vertices.get(0));
+                System.out.println("V b " + vertices.get(1));
+                System.out.println("V c " + vertices.get(2));
+                 */
 
                 //triangleCollision2D(bohater, platforma);
 

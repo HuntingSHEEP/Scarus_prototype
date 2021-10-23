@@ -1,4 +1,3 @@
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,35 +92,175 @@ public class SilnikFizyki extends Thread {
 
     private boolean meshCollision(SRectangle rect0, SRectangle rect1) {
        // if(triangleCollision2D(rect0, rect1))
-        //
         //    return true;
 
-        if (gjk(rect0, rect1))
+        if (GJK(rect0, rect1))
             return true;
-
-
-     //   if(triangleCollision2D(rect1, rect0))
-     //       return true;
 
         return false;
     }
 
 
 
-    public boolean gjk(SRectangle rect0, SRectangle rect1){
+    public boolean GJK(SRectangle rect0, SRectangle rect1){
         List<Vector3D> vertices = new ArrayList<Vector3D>();
         direction = new Vector3D();
 
         int result = EvolveResult.StillEvolving;
         while(result == EvolveResult.StillEvolving){
             result = evolveSimplex(vertices, rect0, rect1);
-            //System.out.println("after support " + direction );
         }
-        if(result == EvolveResult.FoundIntersection)
-            System.out.println("ZNALEZIONO PRZECIĘCIE: " + result);
 
+        if(result == EvolveResult.FoundIntersection){
+            System.out.println("Przecinają się!");
+            EPA(vertices, rect0, rect1);
+        }
 
         return result == EvolveResult.FoundIntersection;
+    }
+
+    private void EPA(List<Vector3D> vertices, SRectangle rect0, SRectangle rect1) {
+        for(int i=0; i<10; i++){
+            //zanim podejdziemy do sprawdzania wektora, trzeba zobaczyć czy przypadkiem żadna z krawędzi nie znajduje się w środku układu współrzędnych
+            if (checkIfEdgeOnMiddle(vertices))
+                return;
+
+            Edge edge = findClosestEdge(vertices);
+            Vector3D support = calculateSupport(edge.normal, rect0, rect1);
+            double distance = Vector3D.dot(support, edge.normal);
+
+            Vector3D penetrationVector = Vector3D.multiply(edge.normal, edge.distance);
+
+           // System.out.println("EDGE DISTANCE: " + edge.distance);
+            if(Math.abs(distance - edge.distance) <= 1){
+                //System.out.println("PENETRATION VECTOR: " + penetrationVector);
+                rect0.location.position.add(Vector3D.multiply(penetrationVector, -1));
+                return;
+            }
+            else {
+                vertices.add(edge.index, support);
+            }
+
+        }
+    }
+
+    private boolean checkIfEdgeOnMiddle(List<Vector3D> vertices) {
+        for (int i=0; i<vertices.size(); i++){
+            int j = i + 1;
+            //zawijanie do pierwszego wierzchołka
+            if(j >= vertices.size())
+                j = 0;
+
+            //wyciągnięcie wierzchołków a oraz b
+            Vector3D a = vertices.get(i);
+            Vector3D b = vertices.get(j);
+
+            Vector3D aCopy = new Vector3D(a.x, a.y, a.z);
+            Vector3D bCopy = new Vector3D(b.x, b.y, b.z);
+
+            //normalizowanie wektora a oraz b
+            aCopy.normalize();
+            bCopy.normalize();
+
+            //odwracanie dowolnego z nich
+            aCopy.multiply(-1);
+
+            if(Vector3D.equall(aCopy, bCopy)){
+                //System.out.println("THEY ARE EQUALL!!!");
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    private Vector3D calculateSupport(Vector3D normal, SRectangle rect0, SRectangle rect1) {
+        return Vector3D.difference(rect0.support(normal), rect1.support(Vector3D.multiply(normal, -1)) );
+    }
+
+    public Edge findClosestEdge(List<Vector3D> vertices) {
+        //TODO jeżeli środek układu nie znajduje się wewnątrz simplexa, to może dawać błędny wynik - do sprawdzenia
+        Vector3D a = vertices.get(0);
+        Vector3D b = vertices.get(1);
+
+        //bierzemy krawędź
+        Vector3D abEdge = new Vector3D(b.x - a.x, b.y - a.y, b.z - a.z);
+
+        //wyznaczamy normalną skierowaną do środka układu
+        Vector3D cNormal = Vector3D.tripleXProduct(abEdge, Vector3D.multiply(a, -1), abEdge);
+        //System.out.println("abEdge "+abEdge);
+        //System.out.println("a      "+a);
+
+        //kierujemy wektor na zewnątrz simplexa
+        //normal.multiply(-1);
+
+        //normalizowanie wektora - żeby odległości były
+        cNormal.normalize();
+
+        //odległość krawędzi od środka układu - wyjdą wartości {ujemne} dodatnie bo nie odwracam wektora na zewnątrz
+        double cDistance = Vector3D.dot(cNormal, Vector3D.multiply(a, -1));
+       // System.out.println("cNormal " + cNormal);
+        //System.out.println("a       " + a);
+
+        //indeks wierzchołka "a" najbliższej krawędzi
+        int cIndex = 0;
+        int cJndex = 1;
+
+        for(int i=0; i<vertices.size(); i++){
+            int j = i + 1;
+            //zawijanie do pierwszego wierzchołka
+            if(j >= vertices.size())
+                j = 0;
+
+            //wyciągnięcie wierzchołków a oraz b
+            a = vertices.get(i);
+            b = vertices.get(j);
+
+            //bierzemy krawędź
+            abEdge = new Vector3D(b.x - a.x, b.y - a.y, b.z - a.z);
+
+            //wyznaczamy normalną skierowaną do środka układu
+            Vector3D normal = Vector3D.tripleXProduct(abEdge, Vector3D.multiply(a, -1), abEdge);
+
+            //kierujemy wektor na zewnątrz simplexa
+            //normal.multiply(-1);
+
+            //normalizowanie wektora - żeby odległości były
+            normal.normalize();
+
+            //odległość krawędzi od środka układu - wyjdą wartości {ujemne} dodatnie bo nie odwracam wektora na zewnątrz
+            double distance = Vector3D.dot(normal, Vector3D.multiply(a, -1));
+
+
+            if(distance < cDistance){
+                cDistance = distance;
+                cIndex = i;
+                cJndex = j;
+                cNormal = normal;
+            }
+        }
+
+/*
+        System.out.println("Closest distance " + cDistance);
+        System.out.println("Closest normal   " + cNormal);
+        System.out.println("Closest index a  " + cIndex);
+        System.out.println("Vertice a " + vertices.get(cIndex));
+        System.out.println("Vertice b " + vertices.get(cJndex));
+ */
+
+        return new Edge(cDistance, Vector3D.multiply(cNormal, -1) , cJndex);
+    }
+
+    class Edge{
+        double distance;
+        Vector3D normal;
+        int index;
+
+        Edge(double distance, Vector3D normal, int index){
+            this.distance = distance;
+            this.normal = normal;
+            this.index = index;
+        }
     }
 
     private boolean addSupport(Vector3D direction, List<Vector3D> vertices, SRectangle rect0, SRectangle rect1 ){
@@ -149,7 +288,6 @@ public class SilnikFizyki extends Thread {
                 break;
             }
             case 2: {
-
                 Vector3D b = vertices.get(1);
                 Vector3D c = vertices.get(0);
 
@@ -177,17 +315,6 @@ public class SilnikFizyki extends Thread {
                 Vector3D a0 = Vector3D.multiply(a, -1);
                 Vector3D ab = Vector3D.difference(b, a);
                 Vector3D ac = Vector3D.difference(c, a);
-/*
-                System.out.println("a : " +a);
-                System.out.println("b : " +b);
-                System.out.println("c : " +c);
-
-                System.out.println("a0 : " +a0);
-                System.out.println("ab : " +ab);
-                System.out.println("ac : " +ac);
-
-                DO TEGO MOMENTU DANE a, b, c oraz vektory a0, ab, ac SIĘ ZGADZAJĄ
- */
 
                 Vector3D acPerp = Vector3D.tripleXProduct(ac, ab, ac);
                 Vector3D abPerp = Vector3D.tripleXProduct(ab, ac, ab);

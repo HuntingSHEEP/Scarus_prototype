@@ -44,6 +44,16 @@ class Vector3D {
         return Vector3D.cross(a ,Vector3D.cross(b, c));
     }
 
+    public static boolean equall(Vector3D a, Vector3D b) {
+        double epsilon = 0.001;
+
+        boolean test0 = Math.abs(a.x - b.x) < epsilon;
+        boolean test1 = Math.abs(a.y - b.y) < epsilon;
+        boolean test2 = Math.abs(a.z - b.z) < epsilon;
+
+        return test0 && test1 && test2;
+    }
+
     public void add(Vector3D vector){
         this.x += vector.x;
         this.y += vector.y;
@@ -96,4 +106,7 @@ class Vector3D {
         return String.format("Vector [%.2f, %.2f, %.2f]",x,y,z);
     }
 
+    public void normalize() {
+        this.multiply(1.0/this.length());
+    }
 }
