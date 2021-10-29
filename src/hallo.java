@@ -1,4 +1,6 @@
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class hallo {
@@ -20,19 +22,46 @@ public class hallo {
 
                 World world = new World(20, 800);
 
-                SRectangle bohater   = new SRectangle(100,80, 0, 40, 40);
-                SRectangle platforma = new SRectangle(120,150, 0, 250, 60);
-                SRectangle platforma1 = new SRectangle(-320,20,0, 580, 20);
-                SRectangle platforma2 = new SRectangle(160,-100,0, 580, 20);
+                //SRectangle bohater   = new SRectangle(100,80, 0, 40, 40);
+                int rozmiar = 40;
 
-                Camera camera = new Camera(0,0,900, 700, new Vector3D(-400, -300));
+                List<Vector3D> wierzcholki = new ArrayList<Vector3D>();
+                wierzcholki.add(new Vector3D(0, -30, 0));
+                wierzcholki.add(new Vector3D(50, -20, 0));
+                wierzcholki.add(new Vector3D(60, 5, 0));
+                wierzcholki.add(new Vector3D(30, 50, 0));
+                wierzcholki.add(new Vector3D(0, 60, 0));
+                wierzcholki.add(new Vector3D(-35, 10, 0));
+                wierzcholki.add(new Vector3D(-20, -25, 0));
 
-                world.add(bohater);
+                List<Vector3D> wierzcholki2 = new ArrayList<Vector3D>();
+                wierzcholki2.add(new Vector3D(5,-50,0));
+                wierzcholki2.add(new Vector3D(50,0,0));
+                wierzcholki2.add(new Vector3D(-5,50,0));
+                wierzcholki2.add(new Vector3D(-50,0,0));
+
+                SRectangle bohater = new SRectangle(0,0,0, wierzcholki );
+                //SRectangle platforma = new SRectangle(0,-200, 0, 80, 200);
+                SRectangle platforma = new SRectangle(0,-50, 0, wierzcholki2);
+                SRectangle platforma1 = new SRectangle(0,0,0, 300, 50);
+                SRectangle platforma2 = new SRectangle(160,-120,0, 300, 20);
+                SRectangle platforma3 = new SRectangle(160,-260,0, 20, 200);
+                SRectangle platforma4 = new SRectangle(100,-260,0, 60, 20);
+
+                Camera camera = new Camera(0,0,900, 700, new Vector3D(-500, -400));
+
+                //world.add(bohater);
                 world.add(platforma);
                 world.add(platforma1);
-                world.add(platforma2);
+                //world.add(platforma2);
+                //world.add(platforma3);
+                //world.add(platforma4);
 
-                bohater.setAcceleration(new Vector3D(0, 5, 0));
+                //bohater.setAcceleration(new Vector3D(0, 5, 0));
+                double pi = 3.14159265359;
+                //bohater.dynamics.omega = new Vector3D(0, 0, pi*0.051);
+                //platforma.dynamics.omega = new Vector3D(0, 0, pi*0.051);
+                //platforma.dynamics.omega = new Vector3D(0, pi*0.1, 0);
 
                 SCircle kolko = new SCircle(0,0,0,25);
                 MyPanel myPanel = new MyPanel(world, camera, bohater);
@@ -49,7 +78,11 @@ public class hallo {
                 silnikFizyki.setWorld(world);
                 silnikFizyki.start();
 
-                silnikFizyki.GJK(bohater, platforma);
+
+                //Vector3D pointUpdate = Matrix.multiply(Matrix.rotationMatrix(new Vector3D(0,0,1), -pi/2), new Vector3D(10, 0, 0));
+                //System.out.println(pointUpdate);
+
+                //silnikFizyki.GJK(bohater, platforma2);
 
                 /*
                 System.out.println("V a " + vertices.get(0));

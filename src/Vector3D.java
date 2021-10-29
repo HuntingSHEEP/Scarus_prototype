@@ -24,6 +24,17 @@ class Vector3D {
         this.z = z;
     }
 
+    public double get(int index){
+        if(index == 0)
+            return x;
+        if(index == 1)
+            return y;
+        if(index == 2)
+            return z;
+
+        return -1;
+    }
+
     public static double distance(Vector3D position, Vector3D position1) {
         return Vector3D.length(Vector3D.difference(position, position1));
     }

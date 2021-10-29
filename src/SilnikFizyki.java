@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
 
 public class SilnikFizyki extends Thread {
     private World world;
@@ -24,6 +25,7 @@ public class SilnikFizyki extends Thread {
                 someGameObject = world.gameObjectList.get(i);
 
                 calculateDynamics(someGameObject, deltaTime);
+                calculateRotation(someGameObject, deltaTime);
                 boolean collision = calculateCollisions(someGameObject, world);
 
                 if(collision){
@@ -44,6 +46,37 @@ public class SilnikFizyki extends Thread {
 
             waitSomeTime();
 
+        }
+    }
+
+    private void calculateRotation(GameObject someGameObject, double deltaTime) {
+        //DELTA TIME POWINNO BYĆ W SEKUNDACH!!! - i chyba jest
+
+        //pobranie kąta fi
+        double fiZ = someGameObject.dynamics.omega.z;
+        //oś obrotu
+        Vector3D rotationAxis = new Vector3D(0,0,1);
+        rotationAxis.normalize();
+        //wektor osi
+        Vector3D axisDelta = new Vector3D(0,0, 0);
+        axisDelta.multiply(-1);
+
+        if(fiZ != 0) {
+            for (int q = 0; q < someGameObject.meshCollider.pointList.size(); q++) {
+                Vector3D point = someGameObject.meshCollider.pointList.get(q);
+                Vector3D pointDelta = Matrix.multiply(Matrix.rotationMatrix(rotationAxis, fiZ * deltaTime), point, new Vector3D());
+                Vector3D pointUpdate = Vector3D.add(point, pointDelta);
+                System.out.println(point + "  ---> " + pointUpdate);
+                someGameObject.meshCollider.pointList.set(q, pointUpdate);
+            }
+
+
+            Vector3D point = someGameObject.location.position;
+            Vector3D pointDelta = Matrix.multiply(Matrix.rotationMatrix(rotationAxis, fiZ * deltaTime), point, axisDelta);
+            Vector3D pointUpdate = Vector3D.add(point, pointDelta);
+            System.out.println(point + "  ---> " + pointUpdate);
+            someGameObject.location.position = pointUpdate;
+            System.out.println("");
         }
     }
 
@@ -78,8 +111,6 @@ public class SilnikFizyki extends Thread {
                                  */
                                 collisionResponse((SRectangle) anotherGameObject, (SRectangle) someGameObject);
                             }
-
-
                         }
 
 

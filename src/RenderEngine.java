@@ -15,6 +15,7 @@ public class RenderEngine extends Thread{
     public void run(){
         System.out.println("Uruchomiono odświeżanie");
         this.panel.setCameraVector(new Vector3D(500, 500));
+
         while(true){
             /* TODO - optymalizacja
             1)wyznaczyć chunki
@@ -31,7 +32,7 @@ public class RenderEngine extends Thread{
     }
 
     private void waitSomeTime() {
-        final long INTERVAL = (int) (1000000);
+        final long INTERVAL = (int) (100000); //odjąłem jedno zero
         long start = System.nanoTime();
         long end;
         do{

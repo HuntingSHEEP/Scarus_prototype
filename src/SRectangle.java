@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.util.List;
 
 public class SRectangle extends GameObject{
     public static final String myType = "SRECTANGLE";
@@ -29,6 +30,44 @@ public class SRectangle extends GameObject{
         updateSphereRadius();
         setUpMeshCollider();
     }
+
+    SRectangle(double x, double y, double z, List<Vector3D> vertices){
+        super(x, y, z);
+        this.type = myType;
+        meshCollider = new MeshCollider();
+
+        sphereRadius = vertices.get(0).length();
+        for(int i=0; i<vertices.size(); i++){
+            double len = vertices.get(i).length();
+            if(len>sphereRadius)
+                sphereRadius = len;
+        }
+        meshCollider.pointList = vertices;
+    }
+
+    SRectangle(double x, double y, double z, Vector3D A, Vector3D B, Vector3D C, Vector3D D){
+        super(x, y, z);
+        this.type = myType;
+
+        sphereRadius = A.length();
+        if(B.length() > sphereRadius)
+            sphereRadius = B.length();
+        if(C.length() > sphereRadius)
+            sphereRadius = C.length();
+        if(D.length() > sphereRadius)
+            sphereRadius = D.length();
+
+
+
+        meshCollider = new MeshCollider();
+        meshCollider.add(A);
+        meshCollider.add(B);
+        meshCollider.add(C);
+        meshCollider.add(D);
+    }
+
+
+
 
     private void setUpMeshCollider() {
         /*Procedura odpowiedzialna za przygotowanie Mesh Collidera*/
