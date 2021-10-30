@@ -78,6 +78,11 @@ public class MyPanel extends JPanel implements KeyListener{
             g2d.setPaint(new Color(0, 255, 217));
             g.drawOval(massMiddle.x.intValue()+cameraVector.x.intValue(), massMiddle.y.intValue()+cameraVector.y.intValue(), 3, 3);
 
+            //PUNKT OBROTU
+            Vector3D referencePoint  = Vector3D.add(someGameObject.location.position.copy(), someGameObject.meshCollider.pointList.get(0).copy().multiply(2));
+            g2d.setPaint(new Color(1, 255, 141));
+            g.drawOval(referencePoint.x.intValue()+cameraVector.x.intValue(),referencePoint.y.intValue()+cameraVector.y.intValue(), 3, 3);
+
 
             Vector3D srodek = new Vector3D(100,100, 0);
 

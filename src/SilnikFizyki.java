@@ -48,7 +48,7 @@ public class SilnikFizyki extends Thread {
         rotationAxis.normalize();
 
         //REFERENCYJNY PUNKT WOKÓŁ KTÓREGO WYKONAĆ OBRÓT BRYŁY
-        Vector3D referencePoint  = new Vector3D(150, 150);
+        Vector3D referencePoint  = Vector3D.add(someGameObject.location.position.copy(), someGameObject.meshCollider.pointList.get(0).copy().multiply(2));
 
         rotateObject(someGameObject, rotationAxis, fiZ, referencePoint, deltaTime);
     }
@@ -154,7 +154,7 @@ public class SilnikFizyki extends Thread {
         }
 
         if(result == EvolveResult.FoundIntersection){
-            System.out.println("Przecinają się!");
+            //System.out.println("Przecinają się!");
             EPA(vertices, rect0, rect1);
         }
 
