@@ -33,52 +33,63 @@ public class SilnikFizyki extends Thread {
                     world.registerInChunks(someGameObject);
                 }
 
-
-
             }
-
-            /*
             //TODO: obliczenia powinny byc wykonywane dla wszystkich obiektów w tym samym momencie, np poprzez stworzenie listy danych LOKALIZACJI dla każdego z obiektóœ i uakualnienie dopiero na końcu
-
-
-            System.out.println(String.format("XY [%.2f, %.2f]   V [%.2f, %.2f]   A [%.2f, %.2f]", obiekt.location.position.x, obiekt.location.position.y, obiekt.dynamics.v.x, obiekt.dynamics.v.y, obiekt.dynamics.a.x, obiekt.dynamics.a.y));
-             */
-
             waitSomeTime();
-
         }
     }
 
     private void calculateRotation(GameObject someGameObject, double deltaTime) {
-        //DELTA TIME POWINNO BYĆ W SEKUNDACH!!! - i chyba jest
+        //POBRANIE KĄTA FI
+        double fiZ = someGameObject.dynamics.omega.length();
 
-        //pobranie kąta fi
-        double fiZ = someGameObject.dynamics.omega.z;
-        //oś obrotu
-        Vector3D rotationAxis = new Vector3D(0,0,1);
+        //USTALENIE OSI OBROTU
+        Vector3D rotationAxis = someGameObject.dynamics.omega.copy();
         rotationAxis.normalize();
-        //wektor osi
-        Vector3D axisDelta = new Vector3D(0,0, 0);
-        axisDelta.multiply(-1);
 
-        if(fiZ != 0) {
-            for (int q = 0; q < someGameObject.meshCollider.pointList.size(); q++) {
-                Vector3D point = someGameObject.meshCollider.pointList.get(q);
-                Vector3D pointDelta = Matrix.multiply(Matrix.rotationMatrix(rotationAxis, fiZ * deltaTime), point, new Vector3D());
-                Vector3D pointUpdate = Vector3D.add(point, pointDelta);
-                System.out.println(point + "  ---> " + pointUpdate);
-                someGameObject.meshCollider.pointList.set(q, pointUpdate);
+        //REFERENCYJNY PUNKT WOKÓŁ KTÓREGO WYKONAĆ OBRÓT BRYŁY
+        Vector3D referencePoint  = new Vector3D(150, 150);
+
+        rotateObject(someGameObject, rotationAxis, fiZ, referencePoint, deltaTime);
+    }
+
+    public void rotateObject(GameObject gameObject, Vector3D rotationAxis, double FI, Vector3D referencePoint, double deltaTime){
+        if(FI != 0) {
+            for (int q = 0; q < gameObject.meshCollider.pointList.size(); q++) {
+                //WIERZCHOŁKI ZDEFINIOWANE SĄ W LOKALNYM UKŁADZIE WSPÓŁRZĘDNYCH, DLATEGO OBRACAJĄ SIĘ WOKÓŁ LOKALNEGO ŚRODKA
+                Vector3D point = gameObject.meshCollider.pointList.get(q);
+                Vector3D pointUpdate = rotatePoint(point,true, rotationAxis, FI, new Vector3D(), deltaTime);
+                gameObject.meshCollider.pointList.set(q, pointUpdate);
             }
 
+            boolean moveTheMiddle = referencePoint != null;
 
-            Vector3D point = someGameObject.location.position;
-            Vector3D pointDelta = Matrix.multiply(Matrix.rotationMatrix(rotationAxis, fiZ * deltaTime), point, axisDelta);
-            Vector3D pointUpdate = Vector3D.add(point, pointDelta);
-            System.out.println(point + "  ---> " + pointUpdate);
-            someGameObject.location.position = pointUpdate;
-            System.out.println("");
+            //PRZEMIESZCZAMY ŚRODEK OBIEKTU TYLKO JEŚLI OBRACANY JEST WOKÓŁ INNEGO PUNKTU
+            //ŚRODEK Z DEFINICJI ZDEFINIOWANY JEST W NADRZĘDYM UKŁADZIE WSPÓŁRZĘDNYCH
+            if(moveTheMiddle) {
+                Vector3D point = gameObject.location.position;
+                Vector3D pointUpdate = rotatePoint(point,false ,rotationAxis, FI, referencePoint, deltaTime);
+                gameObject.location.position = pointUpdate;
+            }
         }
     }
+
+    public Vector3D rotatePoint(Vector3D point,boolean isPointDefinedInLocaleCoordinateSystem, Vector3D rotationAxis, double FI, Vector3D referencePoint, double deltaTime){
+        Vector3D pointUpdate;
+
+        if(isPointDefinedInLocaleCoordinateSystem){
+            Vector3D pointDelta = Matrix.multiply(Matrix.rotationMatrix(rotationAxis, FI * deltaTime), point);
+            pointUpdate = Vector3D.add(point, pointDelta);
+        }
+        else{
+            Vector3D movedPoint = Vector3D.add(point, referencePoint.multiply(-1));
+            Vector3D pointDelta = Matrix.multiply(Matrix.rotationMatrix(rotationAxis, FI * deltaTime), movedPoint);
+            pointUpdate = Vector3D.add(point, pointDelta);
+        }
+        return  pointUpdate;
+    }
+
+
 
     /**
      *

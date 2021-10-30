@@ -14,16 +14,7 @@ public class hallo {
                 frame.setVisible(true);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                GameObject anonim = (GameObject) new SRectangle();
-                SRectangle kwa = (SRectangle) anonim;
-                System.out.println(kwa.height);
-                kwa.height = 20;
-                System.out.println(((SRectangle) anonim).height);
-
                 World world = new World(20, 800);
-
-                //SRectangle bohater   = new SRectangle(100,80, 0, 40, 40);
-                int rozmiar = 40;
 
                 List<Vector3D> wierzcholki = new ArrayList<Vector3D>();
                 wierzcholki.add(new Vector3D(0, -30, 0));
@@ -41,32 +32,18 @@ public class hallo {
                 wierzcholki2.add(new Vector3D(-50,0,0));
 
                 SRectangle bohater = new SRectangle(0,0,0, wierzcholki );
-                //SRectangle platforma = new SRectangle(0,-200, 0, 80, 200);
-                SRectangle platforma = new SRectangle(0,-50, 0, wierzcholki2);
-                SRectangle platforma1 = new SRectangle(0,0,0, 300, 50);
-                SRectangle platforma2 = new SRectangle(160,-120,0, 300, 20);
-                SRectangle platforma3 = new SRectangle(160,-260,0, 20, 200);
-                SRectangle platforma4 = new SRectangle(100,-260,0, 60, 20);
+                SRectangle platforma = new SRectangle(150,30, 0, 100, 60);
+
+                world.add(platforma);
+
+
+                double pi = 3.14159265359;
+                platforma.dynamics.omega = new Vector3D(pi*0.051, 0, 0);
+
 
                 Camera camera = new Camera(0,0,900, 700, new Vector3D(-500, -400));
-
-                //world.add(bohater);
-                world.add(platforma);
-                world.add(platforma1);
-                //world.add(platforma2);
-                //world.add(platforma3);
-                //world.add(platforma4);
-
-                //bohater.setAcceleration(new Vector3D(0, 5, 0));
-                double pi = 3.14159265359;
-                //bohater.dynamics.omega = new Vector3D(0, 0, pi*0.051);
-                //platforma.dynamics.omega = new Vector3D(0, 0, pi*0.051);
-                //platforma.dynamics.omega = new Vector3D(0, pi*0.1, 0);
-
-                SCircle kolko = new SCircle(0,0,0,25);
                 MyPanel myPanel = new MyPanel(world, camera, bohater);
                 frame.add(myPanel);
-
 
                 RenderEngine renderEngine = new RenderEngine();
                 renderEngine.setPanel(myPanel);
@@ -77,24 +54,6 @@ public class hallo {
                 SilnikFizyki silnikFizyki = new SilnikFizyki();
                 silnikFizyki.setWorld(world);
                 silnikFizyki.start();
-
-
-                //Vector3D pointUpdate = Matrix.multiply(Matrix.rotationMatrix(new Vector3D(0,0,1), -pi/2), new Vector3D(10, 0, 0));
-                //System.out.println(pointUpdate);
-
-                //silnikFizyki.GJK(bohater, platforma2);
-
-                /*
-                System.out.println("V a " + vertices.get(0));
-                System.out.println("V b " + vertices.get(1));
-                System.out.println("V c " + vertices.get(2));
-                 */
-
-                //triangleCollision2D(bohater, platforma);
-
-                //trojkatZawieraPunkt00(new Vector3D(0,2,0), new Vector3D(3,1,0), new Vector3D(-3,1,0));
-                //trojkatZawieraPunkt00(new Vector3D(0,2,0), new Vector3D(-33,33,0), new Vector3D(-3,-3,0));
-                //System.out.println(          Vector3D.dot(Vector3D.tripleXProduct(new Vector3D(3, -3, 0), new Vector3D(1,0,0), new Vector3D(3, -3, 0)), new Vector3D(3,-3))      );
             }
         });
 

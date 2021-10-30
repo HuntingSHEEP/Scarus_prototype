@@ -120,4 +120,8 @@ class Vector3D {
     public void normalize() {
         this.multiply(1.0/this.length());
     }
+
+    public Vector3D copy() {
+        return new Vector3D(x, y, z);
+    }
 }

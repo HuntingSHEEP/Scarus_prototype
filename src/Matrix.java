@@ -23,8 +23,8 @@ public class Matrix {
         return M;
     }
 
-    public static Vector3D multiply(double[][] M, Vector3D Point, Vector3D axisDelta) {
-        Vector3D P = new Vector3D(Point.x + axisDelta.x, Point.y+ axisDelta.y, Point.z+ axisDelta.z);
+    public static Vector3D multiply(double[][] M, Vector3D Point) {
+        Vector3D P = new Vector3D(Point.x , Point.y, Point.z);
         double[] movedPoint = new double[3];
 
         for(int q=0; q<3; q++){
