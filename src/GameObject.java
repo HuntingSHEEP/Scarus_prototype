@@ -8,9 +8,10 @@ public class GameObject {
     int layer;
     //TODO: KONIECZNIE POLE COLLIDERA GŁÓWNEGO! albo rozwiązać to interfejsem
     MeshCollider meshCollider;
-    Vector3D collisionVector = new Vector3D();
+    Vector3D collisionVector = new Vector3D(); // jest konkretnym punktem zawieszonym w tym samym układzie współrzędnych co środek obiektu
     Vector3D collisionVectorOmega = new Vector3D();
     boolean isFixed = false;
+
 
 
     GameObject(){

@@ -10,7 +10,7 @@ public class hallo {
             public void run() {
 
                 JFrame frame = new JFrame();
-                frame.setSize(900, 700);
+                frame.setSize(1900, 700);
                 frame.setVisible(true);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -33,16 +33,18 @@ public class hallo {
 
                 SRectangle bohater = new SRectangle(0,0,0, wierzcholki );
                 //SRectangle platforma = new SRectangle(150,-230, 0, 100, 60);
-                SRectangle platforma = new SRectangle(150,-230,0, wierzcholki2);
-                SRectangle platforma1 = new SRectangle(50,0, 0, 400, 60);
+                SRectangle platforma = new SRectangle(-100,-230,0, wierzcholki2);
+                SRectangle platforma1 = new SRectangle(50,0, 0, 2100, 60);
 
                 world.add(platforma);
                 world.add(platforma1);
 
 
                 double pi = 3.14159265359;
-                platforma.dynamics.omega = new Vector3D(0, 0, pi*0.05151);
-                platforma.setAcceleration(new Vector3D(0, 5, 0));
+                platforma.dynamics.omega = new Vector3D(0, 0, pi*0.5129);
+                platforma.setAcceleration(new Vector3D(0, 2, 0));
+                platforma.setVelocity(new Vector3D(30, 0, 0));
+
                 platforma1.isFixed = true;
 
 

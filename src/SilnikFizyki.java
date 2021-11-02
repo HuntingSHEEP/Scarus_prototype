@@ -139,36 +139,28 @@ public class SilnikFizyki extends Thread {
 
     private void resolveRotation(SRectangle sRectObj, double deltaTime) {
         Vector3D r = Vector3D.copy(Vector3D.minus(sRectObj.location.position  ,sRectObj.collisionVector));
-        r.multiply(-1);
+        r.multiply(-1);// tak, r jest wektorem ramienia obrotu, jest więc skierowany ze środka obiektu do punktu obrotu
+
         Vector3D F = Vector3D.copy(sRectObj.dynamics.a);
         Vector3D M = Vector3D.cross(F, r);
 
-        Vector3D e = Vector3D.multiply(M, 0.0015);
+        Vector3D e = Vector3D.multiply(M, 0.01);
         Vector3D deltaOmega = Vector3D.multiply(e, deltaTime);
 
         //AKTUALIZOWANIE OMIEGI CIAŁA - OBRÓT WOKÓŁ PUNKTU MASY
         sRectObj.dynamics.omega.add(deltaOmega);
 
-        //WSPÓŁCZYNIK STRATY ENERGII
-        //sRectObj.dynamics.omega.multiply(0.9999);
-
-        Vector3D deltaFi    = Vector3D.multiply(deltaOmega, deltaTime);
-
-        /*
-
-        //omegaFI - to się żle nazywa
+/* NIE DZIAŁA
+        //OBRÓT ŚRODKA MASY WOKÓŁ PUNKTU
+        M.normalize();
         double omegaFI = sRectObj.collisionVectorOmega.z * deltaTime;
 
-        //TODO: DORAŹNIE NAPRAWIONE NIEPRAWIDŁOWE PRZESUWANIE SIĘ OBIEKTU PODCZAS OPADANIA - ZDIAGNOZOWAĆ PRZYCZYNĘ, PRZECIWNY WEKTOR
-        Vector3D rotationPoint = Vector3D.add(sRectObj.location.position, Vector3D.multiply(sRectObj.collisionVector, -1) );
-        M.normalize();
-
-        rotateObject(sRectObj, M, deltaFi.z + omegaFI, rotationPoint, deltaTime);
-        //System.out.println("resolve rotation");
-
+        Vector3D point = sRectObj.location.position.copy();
+        Vector3D pointUpdate = rotatePoint(point,false ,M, (omegaFI ), sRectObj.collisionVector.copy(), 1);
+        System.out.println(sRectObj.location.position +"    ---->   "+pointUpdate);
+        //sRectObj.location.position = pointUpdate;
         sRectObj.collisionVectorOmega.add(deltaOmega);
-
-         */
+ */
     }
 
     private boolean meshCollision(SRectangle rect0, SRectangle rect1) {
@@ -204,6 +196,7 @@ public class SilnikFizyki extends Thread {
         for(int i=0; i<10; i++){
             //zanim podejdziemy do sprawdzania wektora, trzeba zobaczyć czy przypadkiem żadna z krawędzi nie znajduje się w środku układu współrzędnych
             if (checkIfEdgeOnMiddle(vertices)){
+                wyznaczWierzcholek(rect1, rect0);
                 //TODO: uwzględnić aktualizację wektora kolizji
                 //System.out.println("return");
                 return;
@@ -224,16 +217,23 @@ public class SilnikFizyki extends Thread {
                 //TODO: uwzględnić przypadek równowagi albo dwóch wierzchołków wspierających!
                 //TODO: przypięcie do faktycznego wierzchołka!
 
-                Vector3D punktRotacji = rect0.support(penetrationVector);
+                //małe sprawdzanko
+                Vector3D punktRotacji = rect0.support(penetrationVector); //powinien zwracać listę
+                Vector3D innyPunkt = rect1.support(penetrationVector.multiply(-1)); //tu też
 
-                if(Vector3D.equall(rect0.collisionVector, punktRotacji, 1)){
-                    //znaczy że są zgrubsza podobne
-                }
-                else{
+                double odlegosc = Vector3D.distance(rect0.location.position.copy(), punktRotacji.copy());
+                double odlegosc1 = Vector3D.distance(rect0.location.position.copy(), innyPunkt.copy());
+
+                if(odlegosc > odlegosc1)
+                    punktRotacji = innyPunkt;
+
+                //koniec małego sprawdzanka
+
+                if(!Vector3D.equall(rect0.collisionVector, punktRotacji, 1)){
                     //NIE SĄ ZGRUBSZA PODOBNE
                     //WSPÓŁCZYNIK STRATY ENERGII
-                    System.out.println("PRZEKRĘCENIE NA DRUGI BOK!");
-                    rect0.dynamics.omega.multiply(0.25);
+                    rotationEnergyLoss(rect0.dynamics.omega);
+                    //rect0.collisionVectorOmega.multiply(-1);
                 }
 
                 rect0.collisionVector = punktRotacji;
@@ -244,6 +244,46 @@ public class SilnikFizyki extends Thread {
             }
 
         }
+    }
+
+    private void wyznaczWierzcholek(SRectangle rect0, SRectangle rect1) {
+        for(int e=0; e<rect0.meshCollider.pointList.size(); e++){
+            int ej = e + 1;
+            //zawijanie do pierwszego wierzchołka
+            if(ej >= rect0.meshCollider.pointList.size())
+                ej = 0;
+
+            Vector3D e0 = rect0.meshCollider.pointList.get(e).copy();
+            Vector3D e1 = rect0.meshCollider.pointList.get(ej).copy();
+
+            e0.add(rect0.location.position);
+            e1.add(rect0.location.position);
+
+            for(int g=0; g<rect1.meshCollider.pointList.size(); g++){
+                Vector3D g0 = rect1.meshCollider.pointList.get(g).copy();
+                g0.add(rect1.location.position);
+
+                Vector3D E0G0 = Vector3D.minus(g0, e0);
+                Vector3D E1G0 = Vector3D.minus(g0, e1);
+
+                E0G0.normalize();
+                E1G0.normalize();
+
+                E1G0.multiply(-1);
+                if(Vector3D.equall(E0G0, E1G0, 5)){
+
+                   // System.out.println("ZNALEZIONO WIERZCHOLEK " +  g0);
+                }
+
+
+            }
+        }
+
+    }
+
+    private void rotationEnergyLoss(Vector3D omega) {
+        omega.multiply(0.75);
+        System.out.println("Energy loss");
     }
 
     private boolean checkIfEdgeOnMiddle(List<Vector3D> vertices) {
