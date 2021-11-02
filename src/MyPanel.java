@@ -95,6 +95,13 @@ public class MyPanel extends JPanel implements KeyListener{
             g.drawOval(someGameObject.location.position.x.intValue()+cameraVector.x.intValue(), someGameObject.location.position.y.intValue()+cameraVector.y.intValue(), 4, 4);
 
 
+
+            //wektor przecięcia
+            g2d.setPaint(new Color(221, 1, 89));
+            g.drawLine(cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue(), cameraVector.x.intValue()+someGameObject.location.position.x.intValue(), cameraVector.y.intValue()+someGameObject.location.position.y.intValue());
+
+
+
             //środek obrotu
             //g2d.setPaint(new Color(255, 0, 0));
             //g.drawOval(cameraVector.x.intValue() + srodek.x.intValue(), cameraVector.y.intValue() + srodek.y.intValue(), 4, 4);

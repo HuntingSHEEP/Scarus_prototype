@@ -32,16 +32,18 @@ public class hallo {
                 wierzcholki2.add(new Vector3D(-50,0,0));
 
                 SRectangle bohater = new SRectangle(0,0,0, wierzcholki );
-                SRectangle platforma = new SRectangle(150,-230, 0, 100, 60);
-                SRectangle platforma1 = new SRectangle(150,230, 0, 400, 60);
+                //SRectangle platforma = new SRectangle(150,-230, 0, 100, 60);
+                SRectangle platforma = new SRectangle(150,-230,0, wierzcholki2);
+                SRectangle platforma1 = new SRectangle(50,0, 0, 400, 60);
 
                 world.add(platforma);
                 world.add(platforma1);
 
 
                 double pi = 3.14159265359;
-                platforma.dynamics.omega = new Vector3D(0, 0, pi*0.051);
-                platforma.setAcceleration(new Vector3D(0, 2, 0));
+                platforma.dynamics.omega = new Vector3D(0, 0, pi*0.05151);
+                platforma.setAcceleration(new Vector3D(0, 5, 0));
+                platforma1.isFixed = true;
 
 
                 Camera camera = new Camera(0,0,900, 700, new Vector3D(-500, -400));
