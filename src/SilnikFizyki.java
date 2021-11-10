@@ -30,6 +30,7 @@ public class SilnikFizyki extends Thread {
 
                 someGameObject.collisionVector = null;
                 someGameObject.collisionList   = null;
+                someGameObject.penetrationVector = null;
 
                 boolean collision = calculateCollisions(someGameObject, world);
                 calculateRotation(someGameObject, deltaTime);
@@ -177,6 +178,21 @@ public class SilnikFizyki extends Thread {
             Vector3D predkosc = wypadkowePrzyspieszenie.multiply(1);
             sRectObj.dynamics.tempV = predkosc;
             //sRectObj.dynamics.tempA =  ;
+
+            if(sRectObj.penetrationVector != null){
+
+                double x = Vector3D.dot(sRectObj.dynamics.v, sRectObj.penetrationVector.copy().multiply(-1)) / sRectObj.penetrationVector.copy().length();
+                Vector3D predkoscOdbita = sRectObj.penetrationVector.copy();
+                predkoscOdbita.normalize();
+                predkoscOdbita.multiply(x);
+                predkoscOdbita.multiply(2);
+
+                rotationEnergyLoss(predkoscOdbita);
+
+
+                System.out.println("PRĘDKOŚĆ " +sRectObj.dynamics.v + "  ODBITE " + predkoscOdbita);
+                //sRectObj.dynamics.v.add(predkoscOdbita);
+            }
         }
 
 
@@ -233,6 +249,8 @@ public class SilnikFizyki extends Thread {
                 //System.out.println("PENETRATION VECTOR: " + penetrationVector);
                 rect0.location.position.add(Vector3D.multiply(penetrationVector, -1));
 
+                rect0.penetrationVector = penetrationVector;
+
                 //TODO: uwzględnić przypadek równowagi albo dwóch wierzchołków wspierających!
 
                 //małe sprawdzanko
@@ -240,6 +258,7 @@ public class SilnikFizyki extends Thread {
                 //jeśli wierzchołki rect0 są bliżej środka masy rect0, to znaczy że opierają się w calośći na drugim obiekcie
                 if(punktRotacjiLista.length >= 2){
                     rect0.collisionList = punktRotacjiLista;
+
                 }
 
 

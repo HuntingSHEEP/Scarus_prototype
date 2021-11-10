@@ -3,7 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
-public class MyPanel extends JPanel implements KeyListener{
+public class MyPanel extends JPanel implements KeyListener, MouseMotionListener, MouseListener{
     World world;
     Graphics graphics;
     boolean repaint = false;
@@ -11,6 +11,7 @@ public class MyPanel extends JPanel implements KeyListener{
     Vector3D cameraVector;
     Camera camera;
     GameObject bohater;
+    Vector3D mouseTip = new Vector3D();
 
     MyPanel(World world, Camera camera, GameObject bohater){
         super();
@@ -22,6 +23,8 @@ public class MyPanel extends JPanel implements KeyListener{
         setLayout(null);
         setFocusable(true);
         addKeyListener(this);
+        addMouseMotionListener(this);
+        addMouseListener(this);
     }
 
 
@@ -36,6 +39,18 @@ public class MyPanel extends JPanel implements KeyListener{
 
         //GameObject g0 = world.gameObjectList.get(0);
         //GameObject g1 = world.gameObjectList.get(1);
+
+        //rysowanie kursora
+        int R = 20;
+        int r = 5;
+        int move = 0;
+        g2d.setStroke(new BasicStroke(1f));
+        g2d.setPaint(new Color(255, 0, 85));
+        g.drawLine(mouseTip.x.intValue() - R-move, mouseTip.y.intValue()-move, mouseTip.x.intValue() - r-move, mouseTip.y.intValue()-move);
+        g.drawLine(mouseTip.x.intValue() + r-move, mouseTip.y.intValue()-move, mouseTip.x.intValue() + R-move, mouseTip.y.intValue()-move);
+        g.drawLine(mouseTip.x.intValue()-move, mouseTip.y.intValue() - R-move, mouseTip.x.intValue()-move, mouseTip.y.intValue() - r-move);
+        g.drawLine(mouseTip.x.intValue()-move, mouseTip.y.intValue() + r-move, mouseTip.x.intValue()-move, mouseTip.y.intValue() + R-move);
+
 
         // układ współrzędnych
         g2d.setPaint(new Color(103, 107, 107));
@@ -103,6 +118,13 @@ public class MyPanel extends JPanel implements KeyListener{
 
             }
 
+            if((someGameObject.collisionVector != null) && (someGameObject.penetrationVector != null)){
+                //wektor przecięcia
+                g2d.setPaint(new Color(0, 59, 253));
+                g.drawLine(cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue(), cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue() + someGameObject.penetrationVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue() + someGameObject.penetrationVector.y.intValue());
+
+            }
+
 
 
             //środek obrotu
@@ -137,6 +159,7 @@ public class MyPanel extends JPanel implements KeyListener{
     @Override
     public void keyTyped(KeyEvent e) {
         znak = e.getKeyChar();
+        System.out.println("BUTTON");
 
         int skok = 5;
 
@@ -195,5 +218,46 @@ public class MyPanel extends JPanel implements KeyListener{
 
     public void setCameraVector(Vector3D cameraVector) {
         this.cameraVector = cameraVector;
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        mouseTip.x = Double.valueOf(e.getX());
+        mouseTip.y = Double.valueOf(e.getY());
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        mouseTip.x = Double.valueOf(e.getX());
+        mouseTip.y = Double.valueOf(e.getY());
+    }
+
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        SRectangle platforma1 = new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, 100, 60);
+        platforma1.setAcceleration(new Vector3D(0, 5, 0));
+        world.add(platforma1);
+
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
     }
 }
