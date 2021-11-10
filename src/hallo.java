@@ -31,18 +31,26 @@ public class hallo {
                 wierzcholki2.add(new Vector3D(-5,50,0));
                 wierzcholki2.add(new Vector3D(-50,0,0));
 
+
+                List<Vector3D> wierzcholki3 = new ArrayList<Vector3D>();
+                wierzcholki3.add(new Vector3D(-100,-20,0));
+                wierzcholki3.add(new Vector3D(700,-70,0));
+                wierzcholki3.add(new Vector3D(680,60,0));
+                wierzcholki3.add(new Vector3D(-120,140,0));
+
                 SRectangle bohater = new SRectangle(0,0,0, wierzcholki );
                 //SRectangle platforma = new SRectangle(150,-230, 0, 100, 60);
-                SRectangle platforma = new SRectangle(-100,-230,0, wierzcholki2);
-                SRectangle platforma1 = new SRectangle(50,0, 0, 2100, 60);
+                SRectangle platforma = new SRectangle(50,-230,0, wierzcholki2);
+                SRectangle platforma1 = new SRectangle(500,0, 0, 1300, 60);
+                //SRectangle platforma1 = new SRectangle(50,0, 0, wierzcholki3);
 
                 world.add(platforma);
                 world.add(platforma1);
 
 
                 double pi = 3.14159265359;
-                platforma.dynamics.omega = new Vector3D(0, 0, pi*0.5129);
-                platforma.setAcceleration(new Vector3D(0, 2, 0));
+                //platforma.dynamics.omega = new Vector3D(0, 0, pi*0.11);
+                platforma.setAcceleration(new Vector3D(0, 11, 0));
                 platforma.setVelocity(new Vector3D(30, 0, 0));
 
                 platforma1.isFixed = true;

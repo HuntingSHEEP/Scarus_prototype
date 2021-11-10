@@ -28,9 +28,14 @@ public class SilnikFizyki extends Thread {
                 if(someGameObject.isFixed)
                     continue;
 
-                calculateDynamics(someGameObject, deltaTime);
-                calculateRotation(someGameObject, deltaTime);
+                someGameObject.collisionVector = null;
+                someGameObject.collisionList   = null;
+
                 boolean collision = calculateCollisions(someGameObject, world);
+                calculateRotation(someGameObject, deltaTime);
+                calculateDynamics(someGameObject, deltaTime);
+
+                someGameObject.dynamics.tempA = new Vector3D();
 
                 if(collision){
                     world.deregisterFromChunks(someGameObject);
@@ -52,7 +57,7 @@ public class SilnikFizyki extends Thread {
         rotationAxis.normalize();
 
         //REFERENCYJNY PUNKT WOKÓŁ KTÓREGO WYKONAĆ OBRÓT BRYŁY
-        Vector3D referencePoint  = Vector3D.add(someGameObject.location.position.copy(), someGameObject.meshCollider.pointList.get(0).copy().multiply(2));
+        Vector3D referencePoint  = Vector3D.add(someGameObject.location.position.copy(), someGameObject.meshCollider.pointList.get(0).copy());
 
         rotateObject(someGameObject, rotationAxis, fiZ, null, deltaTime);
     }
@@ -72,7 +77,7 @@ public class SilnikFizyki extends Thread {
             //ŚRODEK Z DEFINICJI ZDEFINIOWANY JEST W NADRZĘDYM UKŁADZIE WSPÓŁRZĘDNYCH
             if(moveTheMiddle) {
                 Vector3D point = gameObject.location.position;
-                Vector3D pointUpdate = rotatePoint(point,false ,rotationAxis, FI, referencePoint, deltaTime);
+                Vector3D pointUpdate = rotatePoint(point,false , rotationAxis, FI, referencePoint, deltaTime);
                 gameObject.location.position = pointUpdate;
             }
         }
@@ -138,29 +143,43 @@ public class SilnikFizyki extends Thread {
     }
 
     private void resolveRotation(SRectangle sRectObj, double deltaTime) {
-        Vector3D r = Vector3D.copy(Vector3D.minus(sRectObj.location.position  ,sRectObj.collisionVector));
-        r.multiply(-1);// tak, r jest wektorem ramienia obrotu, jest więc skierowany ze środka obiektu do punktu obrotu
+        if(sRectObj.collisionVector != null){
 
-        Vector3D F = Vector3D.copy(sRectObj.dynamics.a);
-        Vector3D M = Vector3D.cross(F, r);
+            //jeżeli lista punktów wsparcia jest mniejsza od 2, znaczy nie ma równowagi (no nie do końca)
+            {
+                Vector3D r = Vector3D.copy(Vector3D.minus(sRectObj.collisionVector, sRectObj.location.position));
+                // tak, r jest wektorem ramienia obrotu, jest więc skierowany ze środka obiektu do punktu obrotu
 
-        Vector3D e = Vector3D.multiply(M, 0.01);
-        Vector3D deltaOmega = Vector3D.multiply(e, deltaTime);
+                Vector3D F = Vector3D.copy(sRectObj.dynamics.a);
+                Vector3D M = Vector3D.cross(F, r);
 
-        //AKTUALIZOWANIE OMIEGI CIAŁA - OBRÓT WOKÓŁ PUNKTU MASY
-        sRectObj.dynamics.omega.add(deltaOmega);
+                double masa = 10;
 
-/* NIE DZIAŁA
-        //OBRÓT ŚRODKA MASY WOKÓŁ PUNKTU
-        M.normalize();
-        double omegaFI = sRectObj.collisionVectorOmega.z * deltaTime;
+                Vector3D e = Vector3D.multiply(M, 0.1 * (1/masa));
+                Vector3D deltaOmega = Vector3D.multiply(e, deltaTime);
 
-        Vector3D point = sRectObj.location.position.copy();
-        Vector3D pointUpdate = rotatePoint(point,false ,M, (omegaFI ), sRectObj.collisionVector.copy(), 1);
-        System.out.println(sRectObj.location.position +"    ---->   "+pointUpdate);
-        //sRectObj.location.position = pointUpdate;
-        sRectObj.collisionVectorOmega.add(deltaOmega);
- */
+                //MODYFIKATOR MOMENTU OBROTOWEGO
+                Vector3D T = Vector3D.cross(r.copy(), sRectObj.dynamics.omega.copy());
+                T.multiply(0.4);
+
+                //AKTUALIZOWANIE OMIEGI CIAŁA - OBRÓT WOKÓŁ PUNKTU MASY
+                sRectObj.dynamics.omega.add(deltaOmega);
+
+                //MODYFIKATOR PRZYSPIESZENIA - SIŁA REAKCJI PODŁOŻA, masa równa 1
+                double cosAlpha = Vector3D.dot(F, r) / (F.length() * r.length());
+
+                double Fr = F.length() * cosAlpha * masa;
+                r.normalize();
+                Vector3D FArm = Vector3D.multiply(r, Fr);
+                FArm.multiply(-1);
+                //jakoże masa jest równa 1 więc, przyspieszenie jest równe sile - dodajemy siłę jako przyspieszenie
+                sRectObj.dynamics.tempA = Vector3D.add(FArm, T) ;
+            }
+
+
+        }
+
+
     }
 
     private boolean meshCollision(SRectangle rect0, SRectangle rect1) {
@@ -215,25 +234,37 @@ public class SilnikFizyki extends Thread {
                 rect0.location.position.add(Vector3D.multiply(penetrationVector, -1));
 
                 //TODO: uwzględnić przypadek równowagi albo dwóch wierzchołków wspierających!
-                //TODO: przypięcie do faktycznego wierzchołka!
 
                 //małe sprawdzanko
+                Vector3D[] punktRotacjiLista = rect0.supportList(penetrationVector);
+                //jeśli wierzchołki rect0 są bliżej środka masy rect0, to znaczy że opierają się w calośći na drugim obiekcie
+                if(punktRotacjiLista.length >= 2){
+                    rect0.collisionList = punktRotacjiLista;
+                }
+
+
+                //jeśli natomiast wierzchołek rect1 jest bliżej masy rect0, niż któryś z jego wierzchołków, znaczy że zalicza się on do punktów wsparcia
+
                 Vector3D punktRotacji = rect0.support(penetrationVector); //powinien zwracać listę
                 Vector3D innyPunkt = rect1.support(penetrationVector.multiply(-1)); //tu też
 
                 double odlegosc = Vector3D.distance(rect0.location.position.copy(), punktRotacji.copy());
                 double odlegosc1 = Vector3D.distance(rect0.location.position.copy(), innyPunkt.copy());
 
-                if(odlegosc > odlegosc1)
+                if(odlegosc > odlegosc1){
                     punktRotacji = innyPunkt;
+                    System.out.println("inny punkt");
+                }
+
 
                 //koniec małego sprawdzanka
 
-                if(!Vector3D.equall(rect0.collisionVector, punktRotacji, 1)){
+                if((rect0.collisionVector == null) || !Vector3D.equall(rect0.collisionVector, punktRotacji, 1)){
+                    //System.out.println("NIE SĄ ZGRUBSZA PODOBNE");
                     //NIE SĄ ZGRUBSZA PODOBNE
                     //WSPÓŁCZYNIK STRATY ENERGII
                     rotationEnergyLoss(rect0.dynamics.omega);
-                    //rect0.collisionVectorOmega.multiply(-1);
+                    rotationEnergyLoss(rect0.dynamics.tempA);
                 }
 
                 rect0.collisionVector = punktRotacji;
@@ -283,7 +314,7 @@ public class SilnikFizyki extends Thread {
 
     private void rotationEnergyLoss(Vector3D omega) {
         omega.multiply(0.75);
-        System.out.println("Energy loss");
+        //System.out.println("Energy loss");
     }
 
     private boolean checkIfEdgeOnMiddle(List<Vector3D> vertices) {
@@ -547,12 +578,18 @@ public class SilnikFizyki extends Thread {
 
     public void calculateDynamics(GameObject gameObject , double deltaTime) {
         //zmiana położenia
-        double dx = gameObject.dynamics.v.x*deltaTime + (gameObject.dynamics.a.x/2)*deltaTime*deltaTime;
-        double dy = gameObject.dynamics.v.y*deltaTime + (gameObject.dynamics.a.y/2)*deltaTime*deltaTime;
+
+        Vector3D a = Vector3D.add(gameObject.dynamics.a.copy(), gameObject.dynamics.tempA.copy()) ;
+        //if(gameObject.dynamics.tempA.copy().length() > 0)
+           // System.out.println(gameObject.dynamics.a.copy() +"  "+ gameObject.dynamics.tempA.copy());
+
+
+        double dx = gameObject.dynamics.v.x*deltaTime + (a.x/2)*deltaTime*deltaTime;
+        double dy = gameObject.dynamics.v.y*deltaTime + (a.y/2)*deltaTime*deltaTime;
 
         //nowa prędkość
-        double dvx = gameObject.dynamics.a.x*deltaTime;
-        double dvy = gameObject.dynamics.a.y*deltaTime;
+        double dvx = a.x*deltaTime;
+        double dvy = a.y*deltaTime;
 
         //aktualizacja położenia
         gameObject.moveBy(dx, dy);

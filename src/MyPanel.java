@@ -96,9 +96,12 @@ public class MyPanel extends JPanel implements KeyListener{
 
 
 
-            //wektor przecięcia
-            g2d.setPaint(new Color(221, 1, 89));
-           // g.drawLine(cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue(), cameraVector.x.intValue()+someGameObject.location.position.x.intValue(), cameraVector.y.intValue()+someGameObject.location.position.y.intValue());
+            if(someGameObject.collisionVector != null){
+                //wektor przecięcia
+                g2d.setPaint(new Color(0, 253, 214));
+                g.drawLine(cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue(), cameraVector.x.intValue()+someGameObject.location.position.x.intValue(), cameraVector.y.intValue()+someGameObject.location.position.y.intValue());
+
+            }
 
 
 

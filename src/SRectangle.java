@@ -93,6 +93,8 @@ public class SRectangle extends GameObject{
     public Vector3D support(Vector3D direction){
         /*Funkcja zakłada, że wektory punktów są w odniesieniu do lokalnego, nie globalnego układu współrzędnych*/
 
+        Vector3D afurthestVertice = meshCollider.pointList.get(0);
+
         Vector3D furthestVertice = meshCollider.pointList.get(0);
         double furthestDistance  = Vector3D.dot(meshCollider.pointList.get(0), direction);
 
@@ -102,6 +104,11 @@ public class SRectangle extends GameObject{
             if(distance > furthestDistance){
                 furthestVertice  = vertice;
                 furthestDistance = distance;
+
+                afurthestVertice = null;
+            }
+            else if(distance == furthestDistance){
+                afurthestVertice = vertice;
             }
         }
 
@@ -150,5 +157,38 @@ public class SRectangle extends GameObject{
 
     public void updateSphereRadius(){
         sphereRadius = Math.sqrt(width*width + height*height) / 2;
+    }
+
+    public Vector3D[] supportList(Vector3D direction) {
+        /*Funkcja zakłada, że wektory punktów są w odniesieniu do lokalnego, nie globalnego układu współrzędnych*/
+
+        Vector3D afurthestVertice = meshCollider.pointList.get(0).copy();
+
+        Vector3D furthestVertice = meshCollider.pointList.get(0).copy();
+        double furthestDistance  = Vector3D.dot(meshCollider.pointList.get(0).copy(), direction);
+
+        for(int x=1; x<meshCollider.pointList.size(); x++){
+            Vector3D vertice = meshCollider.pointList.get(x).copy();
+            double  distance = Vector3D.dot(vertice, direction);
+            if(distance > furthestDistance){
+                furthestVertice  = vertice;
+                furthestDistance = distance;
+
+                afurthestVertice = null;
+            }
+            else if(Math.abs(distance - furthestDistance) < 10){
+                afurthestVertice = vertice;
+            }
+        }
+
+        if(afurthestVertice == null)
+            return new Vector3D[]{furthestVertice};
+
+        afurthestVertice.add(this.location.position);
+        furthestVertice.add(this.location.position);
+
+
+        //lecz wierzchołek zwraca już przeliczony na globalny układ współrzędnych
+        return new Vector3D[]{afurthestVertice, furthestVertice};
     }
 }

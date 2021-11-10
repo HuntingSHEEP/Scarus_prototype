@@ -129,7 +129,7 @@ class Vector3D {
     }
 
     public String toString(){
-        return String.format("Vector [%.2f, %.2f, %.2f]",x,y,z);
+        return String.format("Vector [%.4f, %.4f, %.4f]",x,y,z);
     }
 
     public void normalize() {
