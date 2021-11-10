@@ -39,7 +39,7 @@ public class hallo {
                 wierzcholki3.add(new Vector3D(-120,140,0));
 
                 SRectangle bohater = new SRectangle(0,0,0, wierzcholki );
-                //SRectangle platforma = new SRectangle(150,-230, 0, 100, 60);
+                //SRectangle platforma = new SRectangle(150,-230, 0, 200, 60);
                 SRectangle platforma = new SRectangle(50,-230,0, wierzcholki2);
                 SRectangle platforma1 = new SRectangle(500,0, 0, 1300, 60);
                 //SRectangle platforma1 = new SRectangle(50,0, 0, wierzcholki3);
@@ -49,9 +49,9 @@ public class hallo {
 
 
                 double pi = 3.14159265359;
-                //platforma.dynamics.omega = new Vector3D(0, 0, pi*0.11);
-                platforma.setAcceleration(new Vector3D(0, 11, 0));
-                platforma.setVelocity(new Vector3D(30, 0, 0));
+                platforma.dynamics.omega = new Vector3D(0, 0, -pi*0.3);
+                platforma.setAcceleration(new Vector3D(0, 3, 0));
+                //platforma.setVelocity(new Vector3D( 11, 0, 0));
 
                 platforma1.isFixed = true;
 

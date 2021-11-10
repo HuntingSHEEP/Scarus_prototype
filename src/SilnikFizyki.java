@@ -36,6 +36,7 @@ public class SilnikFizyki extends Thread {
                 calculateDynamics(someGameObject, deltaTime);
 
                 someGameObject.dynamics.tempA = new Vector3D();
+                someGameObject.dynamics.tempV = new Vector3D();
 
                 if(collision){
                     world.deregisterFromChunks(someGameObject);
@@ -145,38 +146,37 @@ public class SilnikFizyki extends Thread {
     private void resolveRotation(SRectangle sRectObj, double deltaTime) {
         if(sRectObj.collisionVector != null){
 
-            //jeżeli lista punktów wsparcia jest mniejsza od 2, znaczy nie ma równowagi (no nie do końca)
-            {
-                Vector3D r = Vector3D.copy(Vector3D.minus(sRectObj.collisionVector, sRectObj.location.position));
-                // tak, r jest wektorem ramienia obrotu, jest więc skierowany ze środka obiektu do punktu obrotu
+            Vector3D r = Vector3D.copy(Vector3D.minus(sRectObj.collisionVector, sRectObj.location.position));
+            // tak, r jest wektorem ramienia obrotu, jest więc skierowany ze środka obiektu do punktu obrotu
 
-                Vector3D F = Vector3D.copy(sRectObj.dynamics.a);
-                Vector3D M = Vector3D.cross(F, r);
+            Vector3D F = Vector3D.copy(sRectObj.dynamics.a);
+            Vector3D M = Vector3D.cross(F, r);
 
-                double masa = 10;
+            double masa = 1;
 
-                Vector3D e = Vector3D.multiply(M, 0.1 * (1/masa));
-                Vector3D deltaOmega = Vector3D.multiply(e, deltaTime);
+            //KONIECZNE JEST WYZNACZANIE WŁAŚCIWEGO MOMENTU BEZWŁĄDNOŚCI
+            Vector3D e = Vector3D.multiply(M, 0.1 * (1/masa));
+            Vector3D deltaOmega = Vector3D.multiply(e, deltaTime);
 
-                //MODYFIKATOR MOMENTU OBROTOWEGO
-                Vector3D T = Vector3D.cross(r.copy(), sRectObj.dynamics.omega.copy());
-                T.multiply(0.4);
+            //MODYFIKATOR MOMENTU OBROTOWEGO
+            Vector3D T = Vector3D.cross(r.copy(), sRectObj.dynamics.omega.copy());
+            T.multiply(1);
 
-                //AKTUALIZOWANIE OMIEGI CIAŁA - OBRÓT WOKÓŁ PUNKTU MASY
-                sRectObj.dynamics.omega.add(deltaOmega);
+            //AKTUALIZOWANIE OMIEGI CIAŁA - OBRÓT WOKÓŁ PUNKTU MASY
+            sRectObj.dynamics.omega.add(deltaOmega);
 
-                //MODYFIKATOR PRZYSPIESZENIA - SIŁA REAKCJI PODŁOŻA, masa równa 1
-                double cosAlpha = Vector3D.dot(F, r) / (F.length() * r.length());
+            //MODYFIKATOR PRZYSPIESZENIA - SIŁA REAKCJI PODŁOŻA, masa równa 1
+            double cosAlpha = Vector3D.dot(F, r) / (F.length() * r.length());
 
-                double Fr = F.length() * cosAlpha * masa;
-                r.normalize();
-                Vector3D FArm = Vector3D.multiply(r, Fr);
-                FArm.multiply(-1);
-                //jakoże masa jest równa 1 więc, przyspieszenie jest równe sile - dodajemy siłę jako przyspieszenie
-                sRectObj.dynamics.tempA = Vector3D.add(FArm, T) ;
-            }
-
-
+            double Fr = F.length() * cosAlpha * masa;
+            r.normalize();
+            Vector3D FArm = Vector3D.multiply(r, Fr);
+            FArm.multiply(-1);
+            //jakoże masa jest równa 1 więc, przyspieszenie jest równe sile - dodajemy siłę jako przyspieszenie
+            Vector3D wypadkowePrzyspieszenie = Vector3D.add(FArm, T);
+            Vector3D predkosc = wypadkowePrzyspieszenie.multiply(1);
+            sRectObj.dynamics.tempV = predkosc;
+            //sRectObj.dynamics.tempA =  ;
         }
 
 
@@ -580,12 +580,13 @@ public class SilnikFizyki extends Thread {
         //zmiana położenia
 
         Vector3D a = Vector3D.add(gameObject.dynamics.a.copy(), gameObject.dynamics.tempA.copy()) ;
+        Vector3D v = Vector3D.add(gameObject.dynamics.v.copy(), gameObject.dynamics.tempV.copy()) ;
         //if(gameObject.dynamics.tempA.copy().length() > 0)
            // System.out.println(gameObject.dynamics.a.copy() +"  "+ gameObject.dynamics.tempA.copy());
 
 
-        double dx = gameObject.dynamics.v.x*deltaTime + (a.x/2)*deltaTime*deltaTime;
-        double dy = gameObject.dynamics.v.y*deltaTime + (a.y/2)*deltaTime*deltaTime;
+        double dx = v.x*deltaTime + (a.x/2)*deltaTime*deltaTime;
+        double dy = v.y*deltaTime + (a.y/2)*deltaTime*deltaTime;
 
         //nowa prędkość
         double dvx = a.x*deltaTime;
