@@ -6,6 +6,7 @@ public class Dynamics {
     Vector3D tempA;
     Vector3D tempV;
 
+
     Dynamics(){
         v = new Vector3D();
         a = new Vector3D();

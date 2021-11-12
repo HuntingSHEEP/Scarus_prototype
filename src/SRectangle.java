@@ -176,7 +176,7 @@ public class SRectangle extends GameObject{
 
                 afurthestVertice = null;
             }
-            else if(Math.abs(distance - furthestDistance) < 10){
+            else if(Math.abs(distance - furthestDistance) < 1){
                 afurthestVertice = vertice;
             }
         }

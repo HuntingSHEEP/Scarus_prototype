@@ -13,6 +13,9 @@ public class GameObject {
     Vector3D penetrationVector = null;
 
     boolean isFixed = false;
+    double mass;
+    double invertedMass;
+    double e;
 
 
 
@@ -48,6 +51,16 @@ public class GameObject {
     }
     public void addAcceleration(Vector3D a) {
         dynamics.a.add(a);
+    }
+
+    public void setMass(double mass, boolean isFixed){
+        this.mass = mass;
+        this.isFixed = isFixed;
+
+        if(isFixed)
+            this.invertedMass = 0;
+        else
+            this.invertedMass = 1/mass;
     }
 
 

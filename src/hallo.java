@@ -33,27 +33,33 @@ public class hallo {
 
 
                 List<Vector3D> wierzcholki3 = new ArrayList<Vector3D>();
-                wierzcholki3.add(new Vector3D(-100,-20,0));
+                wierzcholki3.add(new Vector3D(-100,60,0));
                 wierzcholki3.add(new Vector3D(700,-70,0));
                 wierzcholki3.add(new Vector3D(680,60,0));
                 wierzcholki3.add(new Vector3D(-120,140,0));
 
-                SRectangle bohater = new SRectangle(0,0,0, wierzcholki );
-                //SRectangle platforma = new SRectangle(150,-230, 0, 200, 60);
-                SRectangle platforma = new SRectangle(250,-230,0, wierzcholki2);
+                SRectangle bohater = new SRectangle(150,-230, 0, 50, 60);
+                SRectangle platforma = new SRectangle(150,-230, 0, 50, 60);
+                //SRectangle platforma = new SRectangle(250,-230,0, wierzcholki2);
                 SRectangle platforma1 = new SRectangle(500,100, 0, 1300, 60);
                 //SRectangle platforma1 = new SRectangle(50,0, 0, wierzcholki3);
 
-                world.add(platforma);
+                world.add(bohater);
+                bohater.setMass(1, false);
+                bohater.e = 0.8;
+                bohater.setAcceleration(new Vector3D(0, 2, 0));
+
+                platforma1.setMass(1, true);
+                platforma1.e = 0.8;
                 world.add(platforma1);
 
 
                 double pi = 3.14159265359;
-                //platforma.dynamics.omega = new Vector3D(0, 0, -pi*0.3);
-                platforma.setAcceleration(new Vector3D(0, 1, 0));
+                //platforma.dynamics.omega = new Vector3D(0, 0, pi*0.3);
+                //platforma.setAcceleration(new Vector3D(0, 5, 0));
                 //platforma.setVelocity(new Vector3D( 11, 0, 0));
 
-                platforma1.isFixed = true;
+                //platforma1.isFixed = true;
 
 
                 Camera camera = new Camera(0,0,900, 700, new Vector3D(-500, -400));
