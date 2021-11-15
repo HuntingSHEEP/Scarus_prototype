@@ -98,8 +98,6 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
             g.drawOval(someGameObject.location.position.x.intValue()+cameraVector.x.intValue(), someGameObject.location.position.y.intValue()+cameraVector.y.intValue(), 4, 4);
 
 
-
-
             if(( someGameObject.collisionVector != null) && (someGameObject.location.position !=null)){
 
                 Vector3D cV = someGameObject.collisionVector.copy();
@@ -119,8 +117,6 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
                 g.drawLine(cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue(), cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue() + someGameObject.penetrationVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue() + someGameObject.penetrationVector.y.intValue());
 
             }
-
-
 
 
         }
@@ -246,7 +242,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
         platforma1.setAcceleration(new Vector3D(0, 1, 0));
         platforma1.setMass(10, false);
-        platforma1.e = 0.6;
+        platforma1.e = 0.1;
 
         world.add(platforma1);
     }
