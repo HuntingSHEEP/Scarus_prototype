@@ -2,6 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MyPanel extends JPanel implements KeyListener, MouseMotionListener, MouseListener{
     World world;
@@ -19,7 +21,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
         this.camera = camera;
         this.bohater = bohater;
 
-        setBackground(new Color(29, 31, 31));
+        setBackground(new Color(44, 52, 52));
         setLayout(null);
         setFocusable(true);
         addKeyListener(this);
@@ -45,7 +47,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
         int r = 5;
         int move = 0;
         g2d.setStroke(new BasicStroke(1f));
-        g2d.setPaint(new Color(255, 0, 85));
+        g2d.setPaint(new Color(164, 102, 123));
         g.drawLine(mouseTip.x.intValue() - R-move, mouseTip.y.intValue()-move, mouseTip.x.intValue() - r-move, mouseTip.y.intValue()-move);
         g.drawLine(mouseTip.x.intValue() + r-move, mouseTip.y.intValue()-move, mouseTip.x.intValue() + R-move, mouseTip.y.intValue()-move);
         g.drawLine(mouseTip.x.intValue()-move, mouseTip.y.intValue() - R-move, mouseTip.x.intValue()-move, mouseTip.y.intValue() - r-move);
@@ -72,7 +74,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
             g.drawOval(someGameObject.location.position.x.intValue()+cameraVector.x.intValue(), someGameObject.location.position.y.intValue()+cameraVector.y.intValue(), 2, 2);
 
 
-            g2d.setPaint(new Color(255, 0, 235));
+            g2d.setPaint(new Color(210, 204, 210));
             g2d.setStroke(new BasicStroke(1f));
 
             Vector3D massMiddle = new Vector3D(0,0,0);
@@ -91,22 +93,23 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
 
 
-            Vector3D srodek = new Vector3D(100,100, 0);
-
-            //linia od środka obrotu do środka obiektu
-            //g2d.setPaint(new Color(63, 255, 1));
-            //g.drawLine(cameraVector.x.intValue()+ srodek.x.intValue(), cameraVector.y.intValue() +srodek.y.intValue(), cameraVector.x.intValue()+someGameObject.location.position.x.intValue(), cameraVector.y.intValue()+someGameObject.location.position.y.intValue());
-
             //środek obiektu
             g2d.setPaint(new Color(0, 255, 208));
             g.drawOval(someGameObject.location.position.x.intValue()+cameraVector.x.intValue(), someGameObject.location.position.y.intValue()+cameraVector.y.intValue(), 4, 4);
 
 
 
-            if(someGameObject.collisionVector != null){
+
+            if(( someGameObject.collisionVector != null) && (someGameObject.location.position !=null)){
+
+                Vector3D cV = someGameObject.collisionVector.copy();
+                Vector3D p = someGameObject.location.position.copy();
                 //wektor przecięcia
                 g2d.setPaint(new Color(0, 253, 214));
-                //g.drawLine(cameraVector.x.intValue()+ someGameObject.collisionVector.x.intValue(), cameraVector.y.intValue() +someGameObject.collisionVector.y.intValue(), cameraVector.x.intValue()+someGameObject.location.position.x.intValue(), cameraVector.y.intValue()+someGameObject.location.position.y.intValue());
+                g.drawLine(cameraVector.x.intValue()+ cV.x.intValue(), cameraVector.y.intValue() +cV.y.intValue(), cameraVector.x.intValue()+p.x.intValue(), cameraVector.y.intValue()+p.y.intValue());
+
+                g2d.setPaint(new Color(253, 0, 152));
+                g.drawOval(cameraVector.x.intValue()+ cV.x.intValue(), cameraVector.y.intValue() +cV.y.intValue(), 4, 4);
 
             }
 
@@ -119,32 +122,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
 
 
-            //środek obrotu
-            //g2d.setPaint(new Color(255, 0, 0));
-            //g.drawOval(cameraVector.x.intValue() + srodek.x.intValue(), cameraVector.y.intValue() + srodek.y.intValue(), 4, 4);
 
-
-
-/*
-            g2d.setPaint(new Color(124, 255, 0));
-            for(int c=0; c<g0.meshCollider.pointList.size(); c++){
-                for(int z=0; z<g1.meshCollider.pointList.size(); z++){
-                    Vector3D p = g0.meshCollider.pointList.get(c);
-                    Vector3D r = g1.meshCollider.pointList.get(z);
-
-                    Vector3D p0 = Vector3D.add(p, g0.location.position);
-                    Vector3D p1 = Vector3D.add(r, g1.location.position);
-
-                    Vector3D mink = Vector3D.difference(p0, p1);
-                    g.drawOval(mink.x.intValue() + cameraVector.x.intValue(), mink.y.intValue()+cameraVector.y.intValue(), 2, 2);
-
-
-                }
-            }
-
- */
-
-            //g2d.fill(someGameObject.skin);
         }
     }
 
@@ -184,9 +162,9 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
         }else if(znak == 's'){
             bohater.dynamics.a.y = wartosc;
         }else if(znak == 'a'){
-            bohater.dynamics.a.x = -wartosc;
+            bohater.dynamics.a.x = -wartosc*3;
         }else if(znak == 'd') {
-            bohater.dynamics.a.x = wartosc;
+            bohater.dynamics.a.x = wartosc*3;
         }
 
 
@@ -238,13 +216,39 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        SRectangle platforma1 = new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, 40, 60);
-        platforma1.setAcceleration(new Vector3D(0, 2, 0));
-        platforma1.setMass(2, false);
-        platforma1.e = 0.8;
+        e.getButton();
+
+        java.util.List<Vector3D> wierzcholki = null;
+        SRectangle platforma1 = null;
+
+        if(e.getButton() == 1){
+            wierzcholki = new ArrayList<Vector3D>();
+            wierzcholki.add(new Vector3D(5,-50,0));
+            wierzcholki.add(new Vector3D(50,0,0));
+            wierzcholki.add(new Vector3D(-5,50,0));
+            wierzcholki.add(new Vector3D(-50,0,0));
+
+            platforma1 =  new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, wierzcholki);
+            //platforma1.dynamics.I = 700;
+
+        }else if(e.getButton() == 3){
+            wierzcholki = new ArrayList<Vector3D>();
+            wierzcholki.add(new Vector3D(-100,60,0));
+            wierzcholki.add(new Vector3D(700,-70,0));
+            wierzcholki.add(new Vector3D(680,60,0));
+            wierzcholki.add(new Vector3D(-120,140,0));
+
+            platforma1 =  new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, 40 , 60);
+            //platforma1.dynamics.I = 700;
+        }
+
+
+
+        platforma1.setAcceleration(new Vector3D(0, 1, 0));
+        platforma1.setMass(10, false);
+        platforma1.e = 0.6;
 
         world.add(platforma1);
-
     }
 
     @Override

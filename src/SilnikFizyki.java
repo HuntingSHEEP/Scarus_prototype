@@ -19,36 +19,49 @@ public class SilnikFizyki extends Thread {
         System.out.println("Objects in world: " + world.gameObjectList.size());
 
         while(true){
+
+            long start = System.nanoTime();
             //dla każdego obiektu zdefiniowanego w świecie
             GameObject someGameObject;
-            for (int i = 0; i < world.gameObjectList.size(); i++) {
+
+            boolean flaga = false;
+
+            for(int i=0; i<world.gameObjectList.size(); i++){
                 someGameObject = world.gameObjectList.get(i);
+                //System.out.println("["+i+"] " + someGameObject.location.position);
+                if(someGameObject.location.position.x.isNaN()){
+                    flaga = true;
+                }
 
-                //TODO: TO TYLKO PROWIZORKA!
-                if(someGameObject.isFixed)
-                    continue;
+            }
+            if(flaga)
+                break;
 
-                //someGameObject.collisionVector = null;
-                //someGameObject.collisionList   = null;
-                //someGameObject.penetrationVector = null;
 
-                boolean collision = calculateCollisions(someGameObject, world);
-                //calculateRotation(someGameObject, deltaTime);
-
+            //KROK 1 - Aktualizacja przemieszczenia
+            for(int i=0; i<world.gameObjectList.size(); i++){
+                someGameObject = world.gameObjectList.get(i);
                 calculateDynamics(someGameObject, deltaTime);
+            }
 
-                someGameObject.dynamics.tempA = new Vector3D();
-                someGameObject.dynamics.tempV = new Vector3D();
+            //KROK 2 - Kolizje
+            for(int i=0; i<world.gameObjectList.size(); i++){
+                someGameObject = world.gameObjectList.get(i);
+                boolean collision = calculateCollisions(someGameObject, world);
+            }
+
+            long end = System.nanoTime();
+            deltaTime = end - start;
+            deltaTime *= 1.0 /100000000;
 
 
-                if(collision){
+            /*
+            if(collision){
                     world.deregisterFromChunks(someGameObject);
                     world.registerInChunks(someGameObject);
                 }
 
-            }
-            //TODO: obliczenia powinny byc wykonywane dla wszystkich obiektów w tym samym momencie, np poprzez stworzenie listy danych LOKALIZACJI dla każdego z obiektóœ i uakualnienie dopiero na końcu
-            waitSomeTime();
+             */
         }
     }
 
@@ -119,13 +132,14 @@ public class SilnikFizyki extends Thread {
             if(someGameObject != anotherGameObject){
 
                 if(SRectangle.myType.compareTo(someGameObject.type) == 0){
-                    SRectangle sRectObj = (SRectangle) someGameObject;
+                    SRectangle sRectObject = (SRectangle) someGameObject;
                     if(SRectangle.myType.compareTo(anotherGameObject.type) == 0){
-                        SRectangle aRectObj = (SRectangle) anotherGameObject;
+                        SRectangle aRectObject = (SRectangle) anotherGameObject;
 
-                        if(sphereCollision(sRectObj, aRectObj)){
-                            Collision collision = meshCollision(sRectObj,  aRectObj);
-                            if(collision.collided){
+                        if(sphereCollision(sRectObject, aRectObject)){
+
+                            Collision collision = meshCollision(sRectObject,  aRectObject);
+                            if((collision != null) && collision.collided){
                                 collidedWithAnObject = true;
                                 /* 0) wykrycie kolizji
                                     1) wyciągnięcie obiektu z kolizji - czy na pewno?
@@ -134,10 +148,15 @@ public class SilnikFizyki extends Thread {
                                     4) obliczenie przesunięcia
                                     5) WYCOFANIE modyfikacji wektorów przyspieszeń
                                  */
-                                //resolveRotation(sRectObj, deltaTime);
-                                //collisionResponse((SRectangle) someGameObject, (SRectangle) anotherGameObject);
 
-                                resolveCollision(sRectObj, aRectObj, collision);
+
+
+                                if(collision.P != null){
+                                    resolveCollision(sRectObject, aRectObject, collision);
+                                    //resolveFriction(sRectObject, aRectObject, collision);
+                                    //resolveRotation(sRectObject, aRectObject, collision);
+                                }
+
 
                             }
                         }
@@ -150,10 +169,60 @@ public class SilnikFizyki extends Thread {
         return collidedWithAnObject;
     }
 
-    private void resolveCollision(SRectangle A, SRectangle B, Collision collision) {
-        //if(collision.onEdge)
-           // return;
+    private void resolveFriction(SRectangle A, SRectangle B, Collision collision) {
+        //normalna
+        Vector3D n = collision.collisionNormal;
+        n.normalize();
 
+        Vector3D rv = Vector3D.minus(B.dynamics.v, A.dynamics.v);
+        Vector3D t = Vector3D.tripleXProduct(n, rv, n);
+        t.normalize();
+
+        if(Double.isNaN(t.x) || Double.isNaN(t.y) || Double.isNaN(t.z) )
+            return;
+
+        double e = Math.min(A.e, B.e);
+        Vector3D V1_AB = Vector3D.minus(B.dynamics.v, A.dynamics.v);
+        V1_AB.multiply(-(1 + e));
+
+        Vector3D rAP = Vector3D.minus(collision.P, A.location.position);
+        Vector3D rBP = Vector3D.minus(collision.P, B.location.position);
+
+        Vector3D rAP_ = new Vector3D(-rAP.y, rAP.x, 0);
+        Vector3D rBP_ = new Vector3D(-rBP.y, rBP.x, 0);
+
+        rAP_.normalize();
+        rBP_.normalize();
+
+        double partA = Math.pow(Vector3D.dot(rAP_, n), 2) / A.dynamics.I;
+        double partB = Math.pow(Vector3D.dot(rBP_, n), 2) / B.dynamics.I;
+        double j = (Vector3D.dot(V1_AB, t))/(A.invertedMass + B.invertedMass + partA + partB);
+
+        double jt = -Vector3D.dot(rv, t);
+        jt = jt/(A.invertedMass + B.invertedMass);
+
+        double mu = Math.sqrt(Math.pow(A.dynamics.staticFriction, 2) + Math.pow(B.dynamics.staticFriction, 2));
+
+        Vector3D frictionImpulse;
+        if(Math.abs(jt) < j * mu){
+            frictionImpulse = Vector3D.multiply(t, jt);
+        }
+        else{
+            double dynamicFriction = Math.sqrt(Math.pow(A.dynamics.dynamicFriction, 2) + Math.pow(B.dynamics.dynamicFriction, 2));
+            frictionImpulse = Vector3D.multiply(t, -dynamicFriction*j);
+        }
+
+        double skala=1;
+        Vector3D velocityDeltaA = Vector3D.multiply(frictionImpulse, A.invertedMass*skala);
+        Vector3D velocityDeltaB = Vector3D.multiply(frictionImpulse, -B.invertedMass*skala);
+
+
+        A.dynamics.v.add(velocityDeltaA);
+        B.dynamics.v.add(velocityDeltaB);
+
+    }
+
+    private void resolveRotation(SRectangle A, SRectangle B, Collision collision) {
         //normalna
         Vector3D n = collision.collisionNormal;
         n.normalize();
@@ -163,10 +232,66 @@ public class SilnikFizyki extends Thread {
         Vector3D V1_AB = Vector3D.minus(B.dynamics.v, A.dynamics.v);
         V1_AB.multiply(-(1 + e));
 
+        Vector3D rAP = Vector3D.minus(collision.P, A.location.position);
+        Vector3D rBP = Vector3D.minus(collision.P, B.location.position);
+
+        Vector3D rAP_ = new Vector3D(-rAP.y, rAP.x, 0);
+        Vector3D rBP_ = new Vector3D(-rBP.y, rBP.x, 0);
+
+        rAP_.normalize();
+        rBP_.normalize();
+
+        double partA = Math.pow(Vector3D.dot(rAP_, n), 2) / A.dynamics.I;
+        double partB = Math.pow(Vector3D.dot(rBP_, n), 2) / B.dynamics.I;
+
+        double j = (Vector3D.dot(V1_AB, n))/(A.invertedMass + B.invertedMass + partA + partB);
+
+        //DELTA OMEGA
+        double deltaOmegaA = Vector3D.dot(rAP_ ,Vector3D.multiply(n, j)) / A.dynamics.I;
+        double deltaOmegaB = Vector3D.dot(rBP_ ,Vector3D.multiply(n, -j)) / B.dynamics.I;
+
+        //System.out.println("OMEGA " + A.dynamics.omega + " ; DELTA " + deltaOmegaA);
+
+        if(!A.isFixed)
+            A.dynamics.omega.add(new Vector3D(0,0, deltaOmegaA));
+        if(!B.isFixed)
+            B.dynamics.omega.add(new Vector3D(0,0, deltaOmegaB));
+    }
+
+    private void resolveCollision(SRectangle A, SRectangle B, Collision collision) {
+        //normalna
+        Vector3D n = collision.collisionNormal;
+
+        if(Double.isNaN(n.x) || Double.isNaN(n.y) || Double.isNaN(n.z) ){
+            System.out.println("NORMAL IS NAN!");
+            //return;
+        }
+        n.normalize();
+
+        double e = Math.min(A.e, B.e);
+
+        Vector3D V1_AB = Vector3D.minus(B.dynamics.v, A.dynamics.v);
+
+        V1_AB.multiply(-(1 + e));
+
+        Vector3D rAP = Vector3D.minus(collision.P, A.location.position);
+        Vector3D rBP = Vector3D.minus(collision.P, B.location.position);
+
+        Vector3D rAP_ = new Vector3D(-rAP.y, rAP.x, 0);
+        Vector3D rBP_ = new Vector3D(-rBP.y, rBP.x, 0);
+
+        rAP_.normalize();
+        rBP_.normalize();
+
+        double partA = Math.pow(Vector3D.dot(rAP_, n), 2) / A.dynamics.I;
+        double partB = Math.pow(Vector3D.dot(rBP_, n), 2) / B.dynamics.I;
+
         double j = (Vector3D.dot(V1_AB, n))/(A.invertedMass + B.invertedMass);
 
         Vector3D VA_delta = Vector3D.multiply(n, (-1)*j*A.invertedMass);
         Vector3D VB_delta = Vector3D.multiply(n, j*B.invertedMass);
+
+       // System.out.println("A Delta " + VA_delta + "   B  Delta "+VB_delta);
 
 
         if(!A.isFixed)
@@ -175,6 +300,7 @@ public class SilnikFizyki extends Thread {
             B.dynamics.v.add(VB_delta);
     }
 
+    /*
     private void resolveRotation(SRectangle sRectObj, double deltaTime) {
         if(sRectObj.collisionVector != null){
             if(sRectObj.collisionList != null && sRectObj.collisionList.length>1){
@@ -234,6 +360,8 @@ public class SilnikFizyki extends Thread {
 
     }
 
+     */
+
     private Collision meshCollision(SRectangle rect0, SRectangle rect1) {
        return GJK(rect0, rect1);
     }
@@ -252,25 +380,39 @@ public class SilnikFizyki extends Thread {
 
         if(result == EvolveResult.FoundIntersection){
             //System.out.println("Przecinają się!");
-            return EPA(vertices, rect0, rect1);
+            Collision collision = EPA(vertices, rect0, rect1);
+            return collision;
         }
 
         return new Collision();
     }
 
     private Collision EPA(List<Vector3D> vertices, SRectangle rect0, SRectangle rect1) {
+        if(checkIfEdgeOnMiddle(vertices)){
+            List<Vector3D[]> lista0 = getPointsOnEdge(rect0, rect1);
+            if ((lista0 != null) && (lista0.size() > 0)){
+                Vector3D[] pointEdge = lista0.get(0);
+                double distance = Vector3D.distance(pointEdge[2].copy(), rect0.location.position);
 
+                for(int a=1; a<lista0.size(); a++){
+                    Vector3D[] pE = lista0.get(a);
+                    double dist = Vector3D.distance(pE[2], rect0.location.position);
 
-        for(int i=0; i<10; i++){
-            //zanim podejdziemy do sprawdzania wektora, trzeba zobaczyć czy przypadkiem żadna z krawędzi nie znajduje się w środku układu współrzędnych
-            Vector3D prostopadlyNaKrawedzi = checkIfEdgeOnMiddle(vertices);
-            if (prostopadlyNaKrawedzi != null){
-                wyznaczWierzcholek(rect1, rect0);
-                //TODO: uwzględnić aktualizację wektora kolizji
-                return new Collision(true, true, prostopadlyNaKrawedzi);
+                    if(dist < distance){
+                        pointEdge = pE;
+                        distance = dist;
+                    }
+                }
+
+                rect0.collisionVector = pointEdge[2];
+                Vector3D edgeVector = Vector3D.minus(pointEdge[0], pointEdge[1]);
+                Vector3D normal = new Vector3D(-edgeVector.y, edgeVector.x, 0);
+
+                return new Collision(true, true, normal , pointEdge[2]);
             }
+        }
 
-
+        for(int i=0; i<32; i++){
             Edge edge = findClosestEdge(vertices);
             Vector3D support = calculateSupport(edge.normal, rect0, rect1);
             double distance = Vector3D.dot(support, edge.normal);
@@ -278,13 +420,19 @@ public class SilnikFizyki extends Thread {
             Vector3D penetrationVector = Vector3D.multiply(edge.normal, edge.distance);
             Vector3D normal = Vector3D.multiply(edge.normal, edge.distance).copy();
 
-
-           // System.out.println("EDGE DISTANCE: " + edge.distance);
             if(Math.abs(distance - edge.distance) <= 1){
+                if(rect0.isFixed){
+                    rect1.location.position.add(Vector3D.multiply(edge.normal, edge.distance));
+                }
+                else if(rect1.isFixed){
+                    rect0.location.position.add(Vector3D.multiply(edge.normal, edge.distance * (-1)));
+                }
+                else{
+                    rect0.location.position.add(Vector3D.multiply(edge.normal, (-1) * edge.distance / 2.0 ));
+                    rect1.location.position.add(Vector3D.multiply(edge.normal, edge.distance / 2.0));
+                }
 
-                rect0.location.position.add(Vector3D.multiply(penetrationVector, -1));
 
-                //TODO: uwzględnić przypadek równowagi albo dwóch wierzchołków wspierających!
 
                 //małe sprawdzanko
                 Vector3D[] punktRotacjiLista = rect0.supportList(penetrationVector);
@@ -314,14 +462,18 @@ public class SilnikFizyki extends Thread {
                     //System.out.println("NIE SĄ ZGRUBSZA PODOBNE");
                     //NIE SĄ ZGRUBSZA PODOBNE
                     //WSPÓŁCZYNIK STRATY ENERGII
-                    rotationEnergyLoss(rect0.dynamics.omega);
-                    //rotationEnergyLoss(rect0.dynamics.tempA);
-                    //rotationEnergyLoss(rect0.dynamics.tempV);
+                    //rotationEnergyLoss(rect0.dynamics.omega);
+
                 }
 
-                rect0.collisionVector = normal;
+                rect0.collisionVector = punktRotacji;
+                //System.out.println("punkt rotacji " + punktRotacji);
+
                 normal.normalize();
-                return new Collision(true, false, normal);
+
+                if(normal.x.isNaN())
+                    System.out.println("[1] --> NAN!");
+                return new Collision(true, false, normal, punktRotacji);
             }
             else {
                 vertices.add(edge.index, support);
@@ -332,47 +484,75 @@ public class SilnikFizyki extends Thread {
         return null;
     }
 
-    private void wyznaczWierzcholek(SRectangle rect0, SRectangle rect1) {
-        for(int e=0; e<rect0.meshCollider.pointList.size(); e++){
-            int ej = e + 1;
-            //zawijanie do pierwszego wierzchołka
-            if(ej >= rect0.meshCollider.pointList.size())
-                ej = 0;
+    private List<Vector3D[]> getPointsOnEdge(SRectangle rect0, SRectangle rect1) {
+        List<Vector3D[]> punkty = new ArrayList<Vector3D[]>();
 
-            Vector3D e0 = rect0.meshCollider.pointList.get(e).copy();
-            Vector3D e1 = rect0.meshCollider.pointList.get(ej).copy();
 
-            e0.add(rect0.location.position);
-            e1.add(rect0.location.position);
+        for(int a=0; a<rect0.meshCollider.pointList.size(); a++){
+            int b = a + 1;
+            if(b >= rect0.meshCollider.pointList.size())
+                b = 0;
 
-            for(int g=0; g<rect1.meshCollider.pointList.size(); g++){
-                Vector3D g0 = rect1.meshCollider.pointList.get(g).copy();
-                g0.add(rect1.location.position);
+            Vector3D A = rect0.meshCollider.pointList.get(a).copy();
+            Vector3D B = rect0.meshCollider.pointList.get(b).copy();
 
-                Vector3D E0G0 = Vector3D.minus(g0, e0);
-                Vector3D E1G0 = Vector3D.minus(g0, e1);
+            A.add(rect0.location.position);
+            B.add(rect0.location.position);
 
-                E0G0.normalize();
-                E1G0.normalize();
+            for(int c=0; c<rect1.meshCollider.pointList.size(); c++){
+                Vector3D C = rect1.meshCollider.pointList.get(c).copy();
+                C.add(rect1.location.position);
 
-                E1G0.multiply(-1);
-                if(Vector3D.equall(E0G0, E1G0, 5)){
+                if( Math.abs((Vector3D.distance(A, C) + Vector3D.distance(C, B)) - Vector3D.distance(A, B)) < 0.005){
+                    Vector3D[] krawedzPunkt = new Vector3D[3];
+                    krawedzPunkt[0] = A;
+                    krawedzPunkt[1] = B;
+                    krawedzPunkt[2] = C;
 
-                   // System.out.println("ZNALEZIONO WIERZCHOLEK " +  g0);
+                    punkty.add(krawedzPunkt);
                 }
-
-
             }
         }
 
+        for(int a=0; a<rect1.meshCollider.pointList.size(); a++){
+            int b = a + 1;
+            if(b >= rect1.meshCollider.pointList.size())
+                b = 0;
+
+            Vector3D A = rect1.meshCollider.pointList.get(a).copy();
+            Vector3D B = rect1.meshCollider.pointList.get(b).copy();
+
+            A.add(rect1.location.position);
+            B.add(rect1.location.position);
+
+            for(int c=0; c<rect0.meshCollider.pointList.size(); c++){
+                Vector3D C = rect0.meshCollider.pointList.get(c).copy();
+                C.add(rect0.location.position);
+
+                if( Math.abs((Vector3D.distance(A, C) + Vector3D.distance(C, B)) - Vector3D.distance(A, B)) < 0.005){
+                    Vector3D[] krawedzPunkt = new Vector3D[3];
+                    krawedzPunkt[0] = A;
+                    krawedzPunkt[1] = B;
+                    krawedzPunkt[2] = C;
+
+                    punkty.add(krawedzPunkt);
+                }
+            }
+        }
+
+        if(punkty.size() > 0)
+            return punkty;
+        else
+            return null;
     }
 
+
     private void rotationEnergyLoss(Vector3D omega) {
-        omega.multiply(0.75);
+        omega.multiply(0.95);
         //System.out.println("Energy loss");
     }
 
-    private Vector3D checkIfEdgeOnMiddle(List<Vector3D> vertices) {
+    private boolean checkIfEdgeOnMiddle(List<Vector3D> vertices) {
         for (int i=0; i<vertices.size(); i++){
             int j = i + 1;
             //zawijanie do pierwszego wierzchołka
@@ -384,31 +564,31 @@ public class SilnikFizyki extends Thread {
                 k = 0;
 
             //wyciągnięcie wierzchołków a oraz b
-            Vector3D a = vertices.get(i);
-            Vector3D b = vertices.get(j);
+            Vector3D a = vertices.get(i).copy();
+            Vector3D b = vertices.get(j).copy();
 
-            Vector3D aCopy = new Vector3D(a.x, a.y, a.z);
-            Vector3D bCopy = new Vector3D(b.x, b.y, b.z);
+            double a_To_Middle_Len = a.length();
+            double b_To_Middle_Len = b.length();
 
-            //normalizowanie wektora a oraz b
-            aCopy.normalize();
-            bCopy.normalize();
+            Vector3D AB = Vector3D.minus(b, a);
 
-            //odwracanie dowolnego z nich
-            aCopy.multiply(-1);
+            double a_To_b_Len = AB.length();
 
-            if(Vector3D.equall(aCopy, bCopy)){
+
+
+            if(Math.abs((a_To_Middle_Len + b_To_Middle_Len) - a_To_b_Len) < 0.001){
                 Vector3D q = Vector3D.minus(a, b);
-                Vector3D r = vertices.get(k);
-                Vector3D prostopadly =  Vector3D.tripleXProduct(q, r, q);
+
+                Vector3D prostopadly =  new Vector3D(-q.y, q.x, 0);
                 prostopadly.normalize();
 
-                //System.out.println("THEY ARE EQUALL!!! " + prostopadly);
-                return prostopadly;
+                //.out.println("THEY ARE EQUALL!!! " + prostopadly + " a: "+a+"  b: "+b);
+                return true;
             }
 
         }
-        return null;
+        //System.out.println("Return NULL");
+        return false;
     }
 
     private Vector3D calculateSupport(Vector3D normal, SRectangle rect0, SRectangle rect1) {

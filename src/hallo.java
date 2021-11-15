@@ -44,12 +44,12 @@ public class hallo {
                 SRectangle platforma1 = new SRectangle(500,100, 0, 1300, 60);
                 //SRectangle platforma1 = new SRectangle(50,0, 0, wierzcholki3);
 
-                world.add(bohater);
+                //world.add(bohater);
                 bohater.setMass(1, false);
                 bohater.e = 0.8;
-                bohater.setAcceleration(new Vector3D(0, 2, 0));
+                //bohater.setAcceleration(new Vector3D(0, 2, 0));
 
-                platforma1.setMass(1, true);
+                platforma1.setMass(100, true);
                 platforma1.e = 0.8;
                 world.add(platforma1);
 
