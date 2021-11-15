@@ -27,6 +27,7 @@ public class SilnikFizyki extends Thread {
             for(int i=0; i<world.gameObjectList.size(); i++){
                 someGameObject = world.gameObjectList.get(i);
                 calculateDynamics(someGameObject, deltaTime);
+                calculateRotation(someGameObject, deltaTime);
             }
 
             //KROK 2 - Kolizje
@@ -139,7 +140,7 @@ public class SilnikFizyki extends Thread {
                                 if(collision.P != null){
                                     resolveCollision(sRectObject, aRectObject, collision);
                                     resolveFriction(sRectObject, aRectObject, collision);
-                                    //resolveRotation(sRectObject, aRectObject, collision);
+                                    resolveRotation(sRectObject, aRectObject, collision);
                                 }
 
 
@@ -158,6 +159,9 @@ public class SilnikFizyki extends Thread {
         //normalna
         Vector3D n = collision.collisionNormal;
         n.normalize();
+
+        if(n.x.isNaN() || n.y.isNaN() || n.z.isNaN())
+            return;
 
         Vector3D rv = Vector3D.minus(B.dynamics.v, A.dynamics.v);
         Vector3D t = Vector3D.tripleXProduct(n, rv, n);
@@ -212,6 +216,9 @@ public class SilnikFizyki extends Thread {
         Vector3D n = collision.collisionNormal;
         n.normalize();
 
+        if(n.x.isNaN() || n.y.isNaN() || n.z.isNaN())
+            return;
+
         double e = Math.min(A.e, B.e);
 
         Vector3D V1_AB = Vector3D.minus(B.dynamics.v, A.dynamics.v);
@@ -232,8 +239,8 @@ public class SilnikFizyki extends Thread {
         double j = (Vector3D.dot(V1_AB, n))/(A.invertedMass + B.invertedMass + partA + partB);
 
         //DELTA OMEGA
-        double deltaOmegaA = Vector3D.dot(rAP_ ,Vector3D.multiply(n, j)) / A.dynamics.I;
-        double deltaOmegaB = Vector3D.dot(rBP_ ,Vector3D.multiply(n, -j)) / B.dynamics.I;
+        double deltaOmegaA = Vector3D.dot(rAP_ ,Vector3D.multiply(n, -j)) / A.dynamics.I;
+        double deltaOmegaB = Vector3D.dot(rBP_ ,Vector3D.multiply(n, j)) / B.dynamics.I;
 
         //System.out.println("OMEGA " + A.dynamics.omega + " ; DELTA " + deltaOmegaA);
 
@@ -251,6 +258,9 @@ public class SilnikFizyki extends Thread {
         //normalna
         Vector3D n = collision.collisionNormal;
         n.normalize();
+
+        if(n.x.isNaN() || n.y.isNaN() || n.z.isNaN())
+            return;
 
         double e = Math.min(A.e, B.e);
 
@@ -392,7 +402,7 @@ public class SilnikFizyki extends Thread {
                 Vector3D normal = new Vector3D(-edgeVector.y, edgeVector.x, 0);
 
                 normal.normalize();
-                System.out.println("NORMAL " + normal);
+               // System.out.println("NORMAL " + normal);
 
                 double wartosc = 0.0001;
 
