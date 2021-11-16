@@ -225,7 +225,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
             wierzcholki.add(new Vector3D(-50,0,0));
 
             platforma1 =  new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, wierzcholki);
-            platforma1.dynamics.I = 70000;
+            platforma1.dynamics.I = 700;
 
         }else if(e.getButton() == 3){
             wierzcholki = new ArrayList<Vector3D>();
@@ -235,14 +235,14 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
             wierzcholki.add(new Vector3D(-120,140,0));
 
             platforma1 =  new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, 40 , 60);
-            platforma1.dynamics.I = 70000;
+            platforma1.dynamics.I = 700;
         }
 
 
 
         platforma1.setAcceleration(new Vector3D(0, 1, 0));
         platforma1.setMass(10, false);
-        platforma1.e = 0.9;
+        platforma1.e = 0.1;
 
         world.add(platforma1);
     }

@@ -64,6 +64,8 @@ public class SilnikFizyki extends Thread {
             collision = collisionList.get(i);
             //System.out.println("NORMAL: " + collision.collisionNormal);
             resolveDynamics((SRectangle) collision.A, (SRectangle) collision.B, collision);
+            resolveFriction((SRectangle) collision.A, (SRectangle) collision.B, collision);
+            //resolveRotation((SRectangle) collision.A, (SRectangle) collision.B, collision);
 
         }
 
@@ -183,15 +185,6 @@ public class SilnikFizyki extends Thread {
                             if((collision != null) && collision.collided){
                                 collidedWithAnObject = true;
                                 collisionList.add(collision);
-                                /* 0) wykrycie kolizji
-                                    1) wyciągnięcie obiektu z kolizji - czy na pewno?
-                                    2) modyfikacja wektorów przyspieszeń (akcja - reakcja)
-                                    3) odbicie prędkości
-                                    4) obliczenie przesunięcia
-                                    5) WYCOFANIE modyfikacji wektorów przyspieszeń
-                                 */
-                                //if(collision.collisionNormal.x != 0)
-                                    //System.out.println("N0: " + collision.collisionNormal + "   collision on edge:  " + collision.onEdge);
                             }
                         }
 
@@ -287,8 +280,8 @@ public class SilnikFizyki extends Thread {
         double j = (Vector3D.dot(V1_AB, n))/(A.invertedMass + B.invertedMass + partA + partB);
 
         //DELTA OMEGA
-        double deltaOmegaA = Vector3D.dot(rAP_ ,Vector3D.multiply(n, -j)) / A.dynamics.I;
-        double deltaOmegaB = Vector3D.dot(rBP_ ,Vector3D.multiply(n, j)) / B.dynamics.I;
+        double deltaOmegaA = Vector3D.dot(rAP_ ,Vector3D.multiply(n, j)) / A.dynamics.I;
+        double deltaOmegaB = Vector3D.dot(rBP_ ,Vector3D.multiply(n, -j)) / B.dynamics.I;
 
         //System.out.println("OMEGA " + A.dynamics.omega + " ; DELTA " + deltaOmegaA);
 
@@ -302,7 +295,7 @@ public class SilnikFizyki extends Thread {
 
     private void resolveDynamics(SRectangle A, SRectangle B, Collision collision) {
         if(collision.onEdge){
-            return;
+            //return;
         }
 
         //normalna
@@ -431,7 +424,16 @@ public class SilnikFizyki extends Thread {
     }
 
     private Collision EPA(List<Vector3D> vertices, SRectangle rect0, SRectangle rect1) {
-        if(checkIfEdgeOnMiddle(vertices)){
+        Vector3D minkowskiEdge = checkIfEdgeOnMiddle(vertices);
+        Vector3D minkowskiNormal = null;
+
+        if(minkowskiEdge != null){
+            //0) normala -jest
+            minkowskiNormal = new Vector3D(-minkowskiEdge.y, minkowskiEdge.x);
+            minkowskiNormal.normalize();
+        }
+
+        if(checkIfEdgeOnMiddle(vertices) != null){
             List<Vector3D[]> lista0 = getPointsOnEdge(rect0, rect1);
             if ((lista0 != null) && (lista0.size() > 0)){
                 Vector3D[] pointEdge = lista0.get(0);
@@ -452,6 +454,8 @@ public class SilnikFizyki extends Thread {
                 Vector3D normal = new Vector3D(-edgeVector.y, edgeVector.x, 0);
                 normal.normalize();
 
+                normal = minkowskiNormal;
+
 
                 double wartosc = 0.0001;
 
@@ -469,6 +473,10 @@ public class SilnikFizyki extends Thread {
                 return new Collision(true, true, normal , pointEdge[2], rect0, rect1);
             }
         }
+
+
+
+
 
 
 
@@ -492,16 +500,7 @@ public class SilnikFizyki extends Thread {
                     rect1.location.position.add(Vector3D.multiply(edge.normal, edge.distance / 2.0));
                 }
 
-
-
                 //małe sprawdzanko
-                Vector3D[] punktRotacjiLista = rect0.supportList(penetrationVector);
-                //jeśli wierzchołki rect0 są bliżej środka masy rect0, to znaczy że opierają się w calośći na drugim obiekcie
-                if(punktRotacjiLista.length >= 2){
-                    rect0.collisionList = punktRotacjiLista;
-                }
-
-
                 //jeśli natomiast wierzchołek rect1 jest bliżej masy rect0, niż któryś z jego wierzchołków, znaczy że zalicza się on do punktów wsparcia
 
                 Vector3D punktRotacji = rect0.support(penetrationVector); //powinien zwracać listę
@@ -510,28 +509,13 @@ public class SilnikFizyki extends Thread {
                 double odlegosc = Vector3D.distance(rect0.location.position.copy(), punktRotacji.copy());
                 double odlegosc1 = Vector3D.distance(rect0.location.position.copy(), innyPunkt.copy());
 
-                if(odlegosc > odlegosc1){
+                if(odlegosc > odlegosc1)
                     punktRotacji = innyPunkt;
-                    //System.out.println("inny punkt");
-                }
-
 
                 //koniec małego sprawdzanka
 
-                if((rect0.collisionVector == null) || !Vector3D.equall(rect0.collisionVector, punktRotacji, 1)){
-                    //System.out.println("NIE SĄ ZGRUBSZA PODOBNE");
-                    //NIE SĄ ZGRUBSZA PODOBNE
-                    //WSPÓŁCZYNIK STRATY ENERGII
-                    //rotationEnergyLoss(rect0.dynamics.omega);
-                }
-
                 rect0.collisionVector = punktRotacji;
-                //System.out.println("punkt rotacji " + punktRotacji);
-
                 normal.normalize();
-
-                if(normal.x.isNaN())
-                    System.out.println("[1] --> NAN!");
                 return new Collision(true, false, normal, punktRotacji, rect0, rect1);
             }
             else {
@@ -616,7 +600,7 @@ public class SilnikFizyki extends Thread {
         //System.out.println("Energy loss");
     }
 
-    private boolean checkIfEdgeOnMiddle(List<Vector3D> vertices) {
+    private Vector3D checkIfEdgeOnMiddle(List<Vector3D> vertices) {
         for (int i=0; i<vertices.size(); i++){
             int j = i + 1;
             //zawijanie do pierwszego wierzchołka
@@ -646,13 +630,16 @@ public class SilnikFizyki extends Thread {
                 Vector3D prostopadly =  new Vector3D(-q.y, q.x, 0);
                 prostopadly.normalize();
 
-                //.out.println("THEY ARE EQUALL!!! " + prostopadly + " a: "+a+"  b: "+b);
-                return true;
+                System.out.println("Minkowski edge" + q);
+                q.normalize();
+                return q;
+                //return true;
             }
 
         }
         //System.out.println("Return NULL");
-        return false;
+        //return false;
+        return null;
     }
 
     private Vector3D calculateSupport(Vector3D normal, SRectangle rect0, SRectangle rect1) {
