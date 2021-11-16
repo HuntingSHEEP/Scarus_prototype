@@ -41,10 +41,10 @@ public class hallo {
                 SRectangle bohater = new SRectangle(150,-230, 0, 50, 60);
                 SRectangle platforma = new SRectangle(150,-230, 0, 50, 60);
                 //SRectangle platforma = new SRectangle(250,-230,0, wierzcholki2);
-                SRectangle platforma1 = new SRectangle(500,400, 0, 1300, 60);
+                SRectangle platforma1 = new SRectangle(500,10, 0, 1300, 60);
                 //SRectangle platforma1 = new SRectangle(50,0, 0, wierzcholki3);
 
-                world.add(bohater);
+
                 bohater.setMass(1, false);
                 bohater.e = 0.8;
                 //bohater.setAcceleration(new Vector3D(0, 2, 0));
@@ -52,6 +52,8 @@ public class hallo {
                 platforma1.setMass(100, true);
                 platforma1.e = 0.8;
                 world.add(platforma1);
+
+                world.add(bohater);
 
 
                 double pi = 3.14159265359;
