@@ -242,7 +242,7 @@ public class SilnikFizyki extends Thread {
             frictionImpulse = Vector3D.multiply(t, -dynamicFriction*j);
         }
 
-        double skala=0.0001;
+        double skala=0.01;
         Vector3D velocityDeltaA = Vector3D.multiply(frictionImpulse, A.invertedMass*skala);
         Vector3D velocityDeltaB = Vector3D.multiply(frictionImpulse, -B.invertedMass*skala);
 
@@ -457,7 +457,7 @@ public class SilnikFizyki extends Thread {
                 normal = minkowskiNormal;
 
 
-                double wartosc = 0.0001;
+                double wartosc = 0.00001;
 
                 if(rect0.isFixed){ //-
                     rect1.location.position.add(Vector3D.multiply(normal, wartosc));
@@ -469,6 +469,8 @@ public class SilnikFizyki extends Thread {
                     rect0.location.position.add(Vector3D.multiply(normal,  (-1) *wartosc / 2.0 ));
                     rect1.location.position.add(Vector3D.multiply(normal, wartosc / 2.0));
                 }
+
+
 
                 return new Collision(true, true, normal , pointEdge[2], rect0, rect1);
             }
