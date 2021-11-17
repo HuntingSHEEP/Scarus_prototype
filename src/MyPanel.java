@@ -242,7 +242,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
         platforma1.setAcceleration(new Vector3D(0, 1, 0));
         platforma1.setMass(10, false);
-        platforma1.e = 0.1;
+        platforma1.e = 0.9;
 
         world.add(platforma1);
     }
