@@ -69,16 +69,177 @@ public class SilnikFizyki extends Thread {
 
         }
 
-
-         /*
-                if(collision.P != null){
-                    resolveDynamics(sRectObject, aRectObject, collision);
-                    //resolveFriction(sRectObject, aRectObject, collision);
-                    //resolveRotation(sRectObject, aRectObject, collision);
-                }
-
-                 */
     }
+
+    private void resolveDynamics(SRectangle A, SRectangle B, Collision collision) {
+
+        //normalna
+        Vector3D n = collision.collisionNormal;
+        n.normalize();
+        Vec2 normal = new Vec2(n.x.floatValue(), n.y.floatValue());
+
+        if(n.x.isNaN() || n.y.isNaN() || n.z.isNaN())
+            return;
+
+        float e = (float) Math.min(A.e, B.e);
+
+        Vec2 P = new Vec2(collision.P.x.floatValue(), collision.P.y.floatValue());
+
+        Vec2 ra = P.sub( new Vec2(A.location.position.x.floatValue(), A.location.position.y.floatValue()));
+        Vec2 rb = P.sub( new Vec2(B.location.position.x.floatValue(), B.location.position.y.floatValue()));
+
+        Vec2 Bvelocity = new Vec2(B.dynamics.v.x.floatValue(), B.dynamics.v.y.floatValue());
+        Vec2 Avelocity = new Vec2(A.dynamics.v.x.floatValue(), A.dynamics.v.y.floatValue());
+
+        Vec2 rv = Bvelocity.add( Vec2.cross( B.dynamics.omega.z.floatValue(), rb, new Vec2() ) ).subi( Avelocity ).subi( Vec2.cross( A.dynamics.omega.z.floatValue(), ra, new Vec2() ) );
+        float contactVel = Vec2.dot( rv, normal );
+
+        if (contactVel > 0)
+        {
+            return;
+        }
+
+        float raCrossN = Vec2.cross( ra, normal );
+        float rbCrossN = Vec2.cross( rb, normal );
+
+        float AinvInertia = (float) ((float) 1.0/A.dynamics.I);
+        float BinvInertia = (float) ((float) 1.0/B.dynamics.I);
+
+        float invMassSum = (float) (A.invertedMass + B.invertedMass + (raCrossN * raCrossN) * AinvInertia + (rbCrossN * rbCrossN) * BinvInertia);
+        float j = -(1.0f + e) * contactVel;
+        j /= invMassSum;
+      //  j /= contactCount;
+
+        // Apply impulse
+        Vec2 impulse = normal.mul( j );
+
+        Vector3D AimpulsV = new Vector3D(impulse.neg().x * A.invertedMass, impulse.neg().y * A.invertedMass);
+        Vector3D BimpulsV = new Vector3D(impulse.x * B.invertedMass, impulse.y * B.invertedMass);
+
+
+
+        if(!A.isFixed){
+            A.dynamics.v.add(AimpulsV);
+            A.dynamics.omega.z += (1.0/A.dynamics.I) * Vec2.cross(ra, impulse.neg());
+        }
+
+        if(!B.isFixed){
+            B.dynamics.v.add(BimpulsV);
+            B.dynamics.omega.z += (1.0/B.dynamics.I) * Vec2.cross(rb, impulse);
+        }
+
+       // A.applyImpulse( impulse.neg(), ra );
+       // B.applyImpulse( impulse, rb );
+
+        Bvelocity = new Vec2(B.dynamics.v.x.floatValue(), B.dynamics.v.y.floatValue());
+        Avelocity = new Vec2(A.dynamics.v.x.floatValue(), A.dynamics.v.y.floatValue());
+        rv = Bvelocity.add( Vec2.cross( B.dynamics.omega.z.floatValue(), rb, new Vec2() ) ).subi( Avelocity ).subi( Vec2.cross( A.dynamics.omega.z.floatValue(), ra, new Vec2() ) );
+
+        Vec2 t = new Vec2( rv );
+        t.addsi( normal, -Vec2.dot( rv, normal ) );
+        t.normalize();
+
+        float jt = -Vec2.dot( rv, t );
+        jt /= invMassSum;
+        //jt /= contactCount;
+
+        if(Math.abs(jt) < 0.00000001){
+            return;
+        }
+
+        float sf = (float)StrictMath.sqrt( A.dynamics.staticFriction * A.dynamics.staticFriction + B.dynamics.staticFriction * B.dynamics.staticFriction);
+        float df = (float)StrictMath.sqrt( A.dynamics.dynamicFriction * A.dynamics.dynamicFriction + B.dynamics.dynamicFriction * B.dynamics.dynamicFriction);
+
+        // Coulumb's law
+        Vec2 tangentImpulse;
+        // if(std::abs( jt ) < j * sf)
+        if (StrictMath.abs( jt ) < j * sf)
+        {
+            // tangentImpulse = t * jt;
+            tangentImpulse = t.mul( jt );
+        }
+        else
+        {
+            // tangentImpulse = t * -j * df;
+            tangentImpulse = t.mul( j ).muli( -df );
+        }
+
+        AimpulsV = new Vector3D(tangentImpulse.neg().x * A.invertedMass, tangentImpulse.neg().y * A.invertedMass);
+        BimpulsV = new Vector3D(tangentImpulse.x * B.invertedMass, tangentImpulse.y * B.invertedMass);
+
+        if(!A.isFixed){
+            A.dynamics.v.add(AimpulsV);
+            A.dynamics.omega.z += (1.0/A.dynamics.I) * Vec2.cross(ra, tangentImpulse.neg());
+        }
+
+        if(!B.isFixed){
+            B.dynamics.v.add(BimpulsV);
+            B.dynamics.omega.z += (1.0/B.dynamics.I) * Vec2.cross(rb, tangentImpulse);
+        }
+
+
+
+
+
+
+        //A.applyImpulse( tangentImpulse.neg(), ra );
+        //B.applyImpulse( tangentImpulse, rb );
+        /*
+//sprawdzać zwrot normalnej - ma być w kierunku A
+
+        Vector3D rAP = Vector3D.minus(collision.P, A.location.position);
+        Vector3D rBP = Vector3D.minus(collision.P, B.location.position);
+
+        Vector3D rAP_ = new Vector3D(-rAP.y, rAP.x, 0); //kontrolować zwrot wektora
+        Vector3D rBP_ = new Vector3D(-rBP.y, rBP.x, 0);
+
+        rAP_.normalize();
+        rBP_.normalize();
+
+        Vector3D vAP = Vector3D.add(A.dynamics.v, Vector3D.multiply(rAP_, A.dynamics.omega.z * rAP.length()));
+        Vector3D vBP = Vector3D.add(B.dynamics.v, Vector3D.multiply(rBP_, B.dynamics.omega.z * rBP.length()));
+        Vector3D vAB = Vector3D.minus(vAP, vBP);
+
+        //if(Vector3D.dot(vAB, n) > 0)
+            //return;
+
+        double partA = Math.pow(Vector3D.dot(rAP_, n), 2) / A.dynamics.I;
+        double partB = Math.pow(Vector3D.dot(rBP_, n), 2) / B.dynamics.I;
+
+        double j = Vector3D.dot(Vector3D.multiply(vAB, (-1)*(1+e)), n) / (A.invertedMass + B.invertedMass +  partA + partB);
+        System.out.println(j);
+
+
+        Vector3D VA_delta = Vector3D.multiply(n, j*A.invertedMass);
+        Vector3D VB_delta = Vector3D.multiply(n, -j*B.invertedMass);
+
+        double omegaA_delta = Vector3D.dot(rAP_ ,Vector3D.multiply(n, j))/A.dynamics.I;
+        double omegaB_delta = Vector3D.dot(rBP_ ,Vector3D.multiply(n, -j))/B.dynamics.I;
+
+
+        if(!A.isFixed){
+            A.dynamics.v.add(VA_delta);
+        }
+
+        if(!B.isFixed){
+            B.dynamics.v.add(VB_delta);
+        }
+
+
+
+        if(!A.isFixed){
+            A.dynamics.omega.z += omegaA_delta;
+        }
+
+        if(!B.isFixed){
+            B.dynamics.omega.z += omegaB_delta;
+        }
+
+         */
+
+    }
+
+
 
     private List<Collision> getUniqueCollisionList(List<Collision> collisionList) {
         List<Collision> list = new ArrayList<Collision>();
@@ -292,7 +453,7 @@ public class SilnikFizyki extends Thread {
     }
 
 
-
+/*
     private void resolveDynamics(SRectangle A, SRectangle B, Collision collision) {
         if(collision.onEdge){
             //return;
@@ -333,6 +494,14 @@ public class SilnikFizyki extends Thread {
         if(!B.isFixed)
             B.dynamics.v.add(VB_delta);
     }
+
+
+
+
+
+
+ */
+
 
 /*
     private void resolveRotation(SRectangle sRectObj, double deltaTime) {
@@ -632,7 +801,7 @@ public class SilnikFizyki extends Thread {
                 Vector3D prostopadly =  new Vector3D(-q.y, q.x, 0);
                 prostopadly.normalize();
 
-                System.out.println("Minkowski edge" + q);
+                //System.out.println("Minkowski edge" + q);
                 q.normalize();
                 return q;
                 //return true;
