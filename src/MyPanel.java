@@ -14,6 +14,8 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
     Camera camera;
     GameObject bohater;
     Vector3D mouseTip = new Vector3D();
+    int count = 0;
+    int physFPS = 0;
 
     MyPanel(World world, Camera camera, GameObject bohater){
         super();
@@ -32,6 +34,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
     @Override
     protected void paintComponent(Graphics g) {
+        count ++;
         graphics = g;
         if(repaint)
             super.paintComponent(g);
@@ -52,6 +55,15 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
         g.drawLine(mouseTip.x.intValue() + r-move, mouseTip.y.intValue()-move, mouseTip.x.intValue() + R-move, mouseTip.y.intValue()-move);
         g.drawLine(mouseTip.x.intValue()-move, mouseTip.y.intValue() - R-move, mouseTip.x.intValue()-move, mouseTip.y.intValue() - r-move);
         g.drawLine(mouseTip.x.intValue()-move, mouseTip.y.intValue() + r-move, mouseTip.x.intValue()-move, mouseTip.y.intValue() + R-move);
+
+        if(count > 200){
+            physFPS = (int) world.physicFps;
+            count = 0;
+        }
+
+        g2d.setPaint(new Color(45, 255, 0));
+        g.drawString("PHYSIC FPS " + physFPS, 20, 20);
+
 
 
         // układ współrzędnych
@@ -104,7 +116,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
                 Vector3D p = someGameObject.location.position.copy();
                 //wektor przecięcia
                 g2d.setPaint(new Color(0, 253, 214));
-                g.drawLine(cameraVector.x.intValue()+ cV.x.intValue(), cameraVector.y.intValue() +cV.y.intValue(), cameraVector.x.intValue()+p.x.intValue(), cameraVector.y.intValue()+p.y.intValue());
+                //g.drawLine(cameraVector.x.intValue()+ cV.x.intValue(), cameraVector.y.intValue() +cV.y.intValue(), cameraVector.x.intValue()+p.x.intValue(), cameraVector.y.intValue()+p.y.intValue());
 
                 g2d.setPaint(new Color(253, 0, 152));
                 g.drawOval(cameraVector.x.intValue()+ cV.x.intValue(), cameraVector.y.intValue() +cV.y.intValue(), 4, 4);
@@ -243,7 +255,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
         platforma1.setAcceleration(new Vector3D(0, 1, 0));
         platforma1.setMass(10, false);
-        platforma1.e = 0.6;
+        platforma1.e = 0.5;
         platforma1.dynamics.I = (1/6.0)*100*100*10.0; // 1/6 * masa * a^2 << moment bezwładności dla sześcianu w osi Z
 
         world.add(platforma1);

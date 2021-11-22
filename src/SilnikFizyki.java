@@ -49,6 +49,7 @@ public class SilnikFizyki extends Thread {
             long end = System.nanoTime();
             deltaTime = end - start;
             deltaTime *= 1.0 /100000000;
+            world.physicFps = 1.0/deltaTime;
             /*
             if(collision){
                     world.deregisterFromChunks(someGameObject);
@@ -64,7 +65,7 @@ public class SilnikFizyki extends Thread {
             collision = collisionList.get(i);
             //System.out.println("NORMAL: " + collision.collisionNormal);
             resolveDynamics((SRectangle) collision.A, (SRectangle) collision.B, collision);
-            resolveFriction((SRectangle) collision.A, (SRectangle) collision.B, collision);
+            //resolveFriction((SRectangle) collision.A, (SRectangle) collision.B, collision);
             //resolveRotation((SRectangle) collision.A, (SRectangle) collision.B, collision);
 
         }
@@ -184,8 +185,23 @@ public class SilnikFizyki extends Thread {
 
         //A.applyImpulse( tangentImpulse.neg(), ra );
         //B.applyImpulse( tangentImpulse, rb );
+
+
+
+
         /*
+
 //sprawdzać zwrot normalnej - ma być w kierunku A
+
+        //normalna
+        Vector3D n = collision.collisionNormal;
+        n.normalize();
+        Vec2 normal = new Vec2(n.x.floatValue(), n.y.floatValue());
+
+        if(n.x.isNaN() || n.y.isNaN() || n.z.isNaN())
+            return;
+
+        float e = (float) Math.min(A.e, B.e);
 
         Vector3D rAP = Vector3D.minus(collision.P, A.location.position);
         Vector3D rBP = Vector3D.minus(collision.P, B.location.position);
@@ -207,7 +223,6 @@ public class SilnikFizyki extends Thread {
         double partB = Math.pow(Vector3D.dot(rBP_, n), 2) / B.dynamics.I;
 
         double j = Vector3D.dot(Vector3D.multiply(vAB, (-1)*(1+e)), n) / (A.invertedMass + B.invertedMass +  partA + partB);
-        System.out.println(j);
 
 
         Vector3D VA_delta = Vector3D.multiply(n, j*A.invertedMass);
@@ -236,6 +251,8 @@ public class SilnikFizyki extends Thread {
         }
 
          */
+
+
 
     }
 
@@ -628,6 +645,7 @@ public class SilnikFizyki extends Thread {
 
                 double wartosc = 0.00001;
 
+
                 if(rect0.isFixed){ //-
                     rect1.location.position.add(Vector3D.multiply(normal, wartosc));
                 }
@@ -638,6 +656,8 @@ public class SilnikFizyki extends Thread {
                     rect0.location.position.add(Vector3D.multiply(normal,  (-1) *wartosc / 2.0 ));
                     rect1.location.position.add(Vector3D.multiply(normal, wartosc / 2.0));
                 }
+
+
 
 
 
@@ -660,16 +680,20 @@ public class SilnikFizyki extends Thread {
             Vector3D normal = Vector3D.multiply(edge.normal, edge.distance).copy();
 
             if(Math.abs(distance - edge.distance) <= 1){
+                double skala = 0.007;
+
                 if(rect0.isFixed){
-                    rect1.location.position.add(Vector3D.multiply(edge.normal, edge.distance ));
+                    rect1.location.position.add(Vector3D.multiply(edge.normal, edge.distance * skala));
                 }
                 else if(rect1.isFixed){
-                    rect0.location.position.add(Vector3D.multiply(edge.normal, edge.distance *(-1) ));
+                    rect0.location.position.add(Vector3D.multiply(edge.normal, edge.distance *(-1) * skala));
                 }
                 else{
-                    rect0.location.position.add(Vector3D.multiply(edge.normal, (-1) * edge.distance / 2.0 ));
-                    rect1.location.position.add(Vector3D.multiply(edge.normal, edge.distance / 2.0));
+                    rect0.location.position.add(Vector3D.multiply(edge.normal, skala* (-1) * edge.distance / 2.0 ));
+                    rect1.location.position.add(Vector3D.multiply(edge.normal, skala* edge.distance / 2.0));
                 }
+
+
 
                 //małe sprawdzanko
                 //jeśli natomiast wierzchołek rect1 jest bliżej masy rect0, niż któryś z jego wierzchołków, znaczy że zalicza się on do punktów wsparcia

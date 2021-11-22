@@ -20,6 +20,7 @@ public class World {
 
     private int size;
     private int chunkPixelWidth;
+    public double physicFps = 0;
 
     World(int size, int chunkPixelWidth){
         this.size = size;
