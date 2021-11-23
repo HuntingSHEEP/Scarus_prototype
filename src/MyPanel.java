@@ -257,6 +257,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
         platforma1.setMass(10, false);
         platforma1.e = 0.5;
         platforma1.dynamics.I = (1/6.0)*100*100*10.0; // 1/6 * masa * a^2 << moment bezwładności dla sześcianu w osi Z
+        platforma1.dynamics.invI = 1/platforma1.dynamics.I;
 
         world.add(platforma1);
     }

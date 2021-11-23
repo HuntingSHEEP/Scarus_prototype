@@ -42,7 +42,7 @@ public class SilnikFizyki extends Thread {
             //KROK 3 - Reakcja na kolizje
             if(collisionList.size() > 0){
                 collisionList = getUniqueCollisionList(collisionList);
-                resolveCollisions(collisionList);
+                resolveCollisions(collisionList, deltaTime);
             }
 
 
@@ -59,12 +59,12 @@ public class SilnikFizyki extends Thread {
         }
     }
 
-    private void resolveCollisions(List<Collision> collisionList) {
+    private void resolveCollisions(List<Collision> collisionList, double deltaTime) {
         Collision collision;
         for(int i = 0; i<collisionList.size(); i++){
             collision = collisionList.get(i);
             //System.out.println("NORMAL: " + collision.collisionNormal);
-            resolveDynamics((SRectangle) collision.A, (SRectangle) collision.B, collision);
+            resolveDynamics((SRectangle) collision.A, (SRectangle) collision.B, collision, deltaTime);
             //resolveFriction((SRectangle) collision.A, (SRectangle) collision.B, collision);
             //resolveRotation((SRectangle) collision.A, (SRectangle) collision.B, collision);
 
@@ -72,11 +72,13 @@ public class SilnikFizyki extends Thread {
 
     }
 
-    private void resolveDynamics(SRectangle A, SRectangle B, Collision collision) {
+    private void resolveDynamics(SRectangle A, SRectangle B, Collision collision, double deltaTime) {
+
 
         //normalna
         Vector3D n = collision.collisionNormal;
         n.normalize();
+
         Vec2 normal = new Vec2(n.x.floatValue(), n.y.floatValue());
 
         if(n.x.isNaN() || n.y.isNaN() || n.z.isNaN())
@@ -103,8 +105,8 @@ public class SilnikFizyki extends Thread {
         float raCrossN = Vec2.cross( ra, normal );
         float rbCrossN = Vec2.cross( rb, normal );
 
-        float AinvInertia = (float) ((float) 1.0/A.dynamics.I);
-        float BinvInertia = (float) ((float) 1.0/B.dynamics.I);
+        float AinvInertia = (float) (A.dynamics.invI);
+        float BinvInertia = (float) (B.dynamics.invI);
 
         float invMassSum = (float) (A.invertedMass + B.invertedMass + (raCrossN * raCrossN) * AinvInertia + (rbCrossN * rbCrossN) * BinvInertia);
         float j = -(1.0f + e) * contactVel;
@@ -120,13 +122,55 @@ public class SilnikFizyki extends Thread {
 
 
         if(!A.isFixed){
+            double vValue = AimpulsV.length();
+           // System.out.println("[A] V length: " + vValue + ", same but in 1s: " + vValue/deltaTime);
+
+            double omegaValue = (1.0/A.dynamics.I) * Vec2.cross(ra, impulse.neg());
+            //System.out.println("[A] Omega z length: " + omegaValue + ", same but in 1s: " + omegaValue/deltaTime);
+
+
             A.dynamics.v.add(AimpulsV);
-            A.dynamics.omega.z += (1.0/A.dynamics.I) * Vec2.cross(ra, impulse.neg());
+
+            if(Math.abs(omegaValue/deltaTime) > 0.001)
+                A.dynamics.omega.z += (1.0/A.dynamics.I) * Vec2.cross(ra, impulse.neg());
+
+
+            if(A.dynamics.v.length() < 0.01){
+                A.dynamics.v = new Vector3D();
+            }
+
+            if(Math.abs(A.dynamics.omega.z) < 0.001){
+                //A.dynamics.omega.z = 0.0;
+            }
+
+
+
         }
 
         if(!B.isFixed){
+            double vValue = BimpulsV.length();
+            //System.out.println("[B] V length: " + vValue + ", same but in 1s: " + vValue/deltaTime);
+
+            double omegaValue = (1.0/B.dynamics.I) * Vec2.cross(rb, impulse);
+            //System.out.println("[B] Omega z length: " + omegaValue + ", same but in 1s: " + omegaValue/deltaTime+"\n");
+
+
             B.dynamics.v.add(BimpulsV);
-            B.dynamics.omega.z += (1.0/B.dynamics.I) * Vec2.cross(rb, impulse);
+
+            if(Math.abs(omegaValue/deltaTime) > 0.001)
+                B.dynamics.omega.z += (1.0/B.dynamics.I) * Vec2.cross(rb, impulse);
+
+
+            if(B.dynamics.v.length() < 0.01){
+                B.dynamics.v = new Vector3D();
+            }
+
+            if(Math.abs(B.dynamics.omega.z) < 0.001){
+               // B.dynamics.omega.z = 0.0;
+            }
+
+
+
         }
 
        // A.applyImpulse( impulse.neg(), ra );
@@ -143,6 +187,26 @@ public class SilnikFizyki extends Thread {
         float jt = -Vec2.dot( rv, t );
         jt /= invMassSum;
         //jt /= contactCount;
+
+        if(!A.isFixed){
+            if((A.dynamics.v.length() < 0.001) && Math.abs(A.dynamics.omega.z) < 0.001){
+                //System.out.println("ZABLOKUJ :  "+A.dynamics.v + "   OMEGA "+A.dynamics.omega.z);
+                A.dynamics.blokada = true;
+                A.dynamics.v = new Vector3D();
+                A.dynamics.omega = new Vector3D();
+
+            }
+        }
+
+        if(!B.isFixed){
+            if((B.dynamics.v.length() < 0.001) && Math.abs(B.dynamics.omega.z) < 0.001){
+                //System.out.println("B ZABLOKUJ :  "+B.dynamics.v + "   OMEGA "+B.dynamics.omega.z);
+                B.dynamics.blokada = true;
+                B.dynamics.v = new Vector3D();
+                B.dynamics.omega = new Vector3D();
+            }
+        }
+
 
         if(Math.abs(jt) < 0.00000001){
             return;
@@ -168,18 +232,15 @@ public class SilnikFizyki extends Thread {
         AimpulsV = new Vector3D(tangentImpulse.neg().x * A.invertedMass, tangentImpulse.neg().y * A.invertedMass);
         BimpulsV = new Vector3D(tangentImpulse.x * B.invertedMass, tangentImpulse.y * B.invertedMass);
 
-        if(!A.isFixed){
+        if((!A.isFixed)){
             A.dynamics.v.add(AimpulsV);
             A.dynamics.omega.z += (1.0/A.dynamics.I) * Vec2.cross(ra, tangentImpulse.neg());
         }
 
-        if(!B.isFixed){
+        if((!B.isFixed)){
             B.dynamics.v.add(BimpulsV);
             B.dynamics.omega.z += (1.0/B.dynamics.I) * Vec2.cross(rb, tangentImpulse);
         }
-
-
-
 
 
 
@@ -187,9 +248,7 @@ public class SilnikFizyki extends Thread {
         //B.applyImpulse( tangentImpulse, rb );
 
 
-
-
-        /*
+/*
 
 //sprawdzać zwrot normalnej - ma być w kierunku A
 
@@ -217,7 +276,7 @@ public class SilnikFizyki extends Thread {
         Vector3D vAB = Vector3D.minus(vAP, vBP);
 
         //if(Vector3D.dot(vAB, n) > 0)
-            //return;
+          //  return;
 
         double partA = Math.pow(Vector3D.dot(rAP_, n), 2) / A.dynamics.I;
         double partB = Math.pow(Vector3D.dot(rBP_, n), 2) / B.dynamics.I;
@@ -250,7 +309,13 @@ public class SilnikFizyki extends Thread {
             B.dynamics.omega.z += omegaB_delta;
         }
 
-         */
+
+
+ */
+
+
+
+
 
 
 
@@ -643,10 +708,10 @@ public class SilnikFizyki extends Thread {
                 normal = minkowskiNormal;
 
 
-                double wartosc = 0.00001;
+                double wartosc = 0.001;
 
 
-                if(rect0.isFixed){ //-
+                if(rect0.isFixed){
                     rect1.location.position.add(Vector3D.multiply(normal, wartosc));
                 }
                 else if(rect1.isFixed){
@@ -657,18 +722,9 @@ public class SilnikFizyki extends Thread {
                     rect1.location.position.add(Vector3D.multiply(normal, wartosc / 2.0));
                 }
 
-
-
-
-
                 return new Collision(true, true, normal , pointEdge[2], rect0, rect1);
             }
         }
-
-
-
-
-
 
 
         for(int i=0; i<32; i++){
@@ -680,7 +736,10 @@ public class SilnikFizyki extends Thread {
             Vector3D normal = Vector3D.multiply(edge.normal, edge.distance).copy();
 
             if(Math.abs(distance - edge.distance) <= 1){
-                double skala = 0.007;
+
+
+                double skala = 0.1;
+
 
                 if(rect0.isFixed){
                     rect1.location.position.add(Vector3D.multiply(edge.normal, edge.distance * skala));
@@ -692,6 +751,8 @@ public class SilnikFizyki extends Thread {
                     rect0.location.position.add(Vector3D.multiply(edge.normal, skala* (-1) * edge.distance / 2.0 ));
                     rect1.location.position.add(Vector3D.multiply(edge.normal, skala* edge.distance / 2.0));
                 }
+
+
 
 
 

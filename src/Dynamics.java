@@ -2,8 +2,10 @@ public class Dynamics {
     Vector3D v, a;
     Vector3D omega;
     double I;
+    double invI;
     double staticFriction;
     double dynamicFriction;
+    boolean blokada;
 
     //modyfikatory tymczasowe
     Vector3D tempA;
@@ -17,7 +19,8 @@ public class Dynamics {
         tempA = new Vector3D();
         tempV = new Vector3D();
         I = 5220;
-        staticFriction = 0.6;
+        staticFriction = 0.7;
         dynamicFriction = 0.6;
+        blokada = false;
     }
 }
