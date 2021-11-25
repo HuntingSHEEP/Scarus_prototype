@@ -231,12 +231,23 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
         if(e.getButton() == 1){
             wierzcholki = new ArrayList<Vector3D>();
+            wierzcholki.add(new Vector3D(0, -30, 0));
+            wierzcholki.add(new Vector3D(50, -20, 0));
+            wierzcholki.add(new Vector3D(60, 5, 0));
+            wierzcholki.add(new Vector3D(30, 50, 0));
+            wierzcholki.add(new Vector3D(0, 60, 0));
+            wierzcholki.add(new Vector3D(-35, 10, 0));
+            wierzcholki.add(new Vector3D(-20, -25, 0));
+            /*
+            wierzcholki = new ArrayList<Vector3D>();
             wierzcholki.add(new Vector3D(5,-50,0));
             wierzcholki.add(new Vector3D(50,0,0));
             wierzcholki.add(new Vector3D(-5,50,0));
             wierzcholki.add(new Vector3D(-50,0,0));
 
-            platforma1 =  new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, 100,100);
+             */
+
+            platforma1 =  new SRectangle(mouseTip.x-cameraVector.x, mouseTip.y-cameraVector.y, 0, wierzcholki);
             //platforma1.dynamics.I = 700;
 
         }else if(e.getButton() == 3){
@@ -254,7 +265,7 @@ public class MyPanel extends JPanel implements KeyListener, MouseMotionListener,
 
 
         platforma1.setAcceleration(new Vector3D(0, 1, 0));
-        platforma1.setMass(10, false);
+        platforma1.setMass(1, false);
         platforma1.e = 0.5;
         platforma1.dynamics.I = (1/6.0)*100*100*10.0; // 1/6 * masa * a^2 << moment bezwładności dla sześcianu w osi Z
         platforma1.dynamics.invI = 1/platforma1.dynamics.I;

@@ -41,7 +41,7 @@ public class hallo {
                 SRectangle bohater = new SRectangle(150,-230, 0, 50, 60);
                 SRectangle platforma = new SRectangle(150,-230, 0, 50, 60);
                 //SRectangle platforma = new SRectangle(250,-230,0, wierzcholki2);
-                SRectangle platforma1 = new SRectangle(500,510, 0, 700, 60);
+                SRectangle platforma1 = new SRectangle(500,510, 0, 1700, 60);
                 //SRectangle platforma1 = new SRectangle(50,0, 0, wierzcholki2);
 
 
