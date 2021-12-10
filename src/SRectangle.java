@@ -74,10 +74,15 @@ public class SRectangle extends GameObject{
         meshCollider = new MeshCollider();
 
         // wyznaczam punkty siatki w odniesieniu do środka masy - w tym przypadku środka geometrycznego
+        //Vector3D A = new Vector3D(-width/2, -height/2);
+        //Vector3D B = new Vector3D(-width/2, height/2);
+        //Vector3D C = new Vector3D(width/2, height/2);
+        //Vector3D D = new Vector3D(width/2, -height/2);
+
         Vector3D A = new Vector3D(-width/2, -height/2);
-        Vector3D B = new Vector3D(-width/2, height/2);
+        Vector3D B = new Vector3D(width/2, -height/2);
         Vector3D C = new Vector3D(width/2, height/2);
-        Vector3D D = new Vector3D(width/2, -height/2);
+        Vector3D D =  new Vector3D(-width/2, height/2);
 
         // wyznaczone punkty siatki dodaję do listy punktów MeshCollidera
         meshCollider.add(A);

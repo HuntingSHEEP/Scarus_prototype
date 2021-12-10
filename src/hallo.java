@@ -33,26 +33,31 @@ public class hallo {
 
 
                 List<Vector3D> wierzcholki3 = new ArrayList<Vector3D>();
-                wierzcholki3.add(new Vector3D(-100,60,0));
-                wierzcholki3.add(new Vector3D(700,-70,0));
-                wierzcholki3.add(new Vector3D(680,60,0));
-                wierzcholki3.add(new Vector3D(-120,140,0));
+                wierzcholki3.add(Vector3D.minus(new Vector3D(20,0), new Vector3D(40, 20)));
+                wierzcholki3.add( Vector3D.minus(new Vector3D(60,0), new Vector3D(40, 20)));
+                wierzcholki3.add(Vector3D.minus(new Vector3D(60,40), new Vector3D(40, 20)));
 
-                SRectangle bohater = new SRectangle(150,-230, 0, 50, 60);
-                SRectangle platforma = new SRectangle(150,-230, 0, 50, 60);
+
+                SRectangle bohater = new SRectangle(50,-230, 0, 50, 50);
+                SRectangle platforma = new SRectangle(0,0,0, 40, 40);
                 //SRectangle platforma = new SRectangle(250,-230,0, wierzcholki2);
-                SRectangle platforma1 = new SRectangle(500,510, 0, 1700, 60);
-                //SRectangle platforma1 = new SRectangle(50,0, 0, wierzcholki2);
+                SRectangle platforma1 = new SRectangle(30,20, 0, 4000, 40);
+                SRectangle platforma2 = new SRectangle(40,20, 0, wierzcholki3);
 
 
-                bohater.setMass(1, false);
-                bohater.e = 0.8;
-                //bohater.setAcceleration(new Vector3D(0, 2, 0));
+                bohater.setMass(10, false);
+                bohater.e = 0.9;
+                bohater.setAcceleration(new Vector3D(0, 0, 0));
+                bohater.dynamics.I = (1/6.0)*50*50*10;
+                bohater.dynamics.invI = 1/bohater.dynamics.I;
 
-                platforma1.setMass(100, true);
+                platforma1.setMass(1000000, true);
                 platforma1.dynamics.invI = 0;
-                platforma1.e = 0.8;
+                platforma1.e = 0.0;
+
+                //world.add(platforma);
                 world.add(platforma1);
+
 
                 world.add(bohater);
 
@@ -78,6 +83,8 @@ public class hallo {
                 SilnikFizyki silnikFizyki = new SilnikFizyki();
                 silnikFizyki.setWorld(world);
                 silnikFizyki.start();
+
+                //silnikFizyki.SAT(platforma, platforma1);
             }
         });
 

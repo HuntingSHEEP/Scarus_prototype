@@ -19,8 +19,8 @@ public class Dynamics {
         tempA = new Vector3D();
         tempV = new Vector3D();
         I = 5220;
-        staticFriction = 0.7;
-        dynamicFriction = 0.6;
+        staticFriction = 0.6;
+        dynamicFriction = 0.5;
         blokada = false;
     }
 }

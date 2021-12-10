@@ -46,6 +46,9 @@ public class SilnikFizyki extends Thread {
             }
 
 
+
+
+
             long end = System.nanoTime();
             deltaTime = end - start;
             deltaTime *= 1.0 /100000000;
@@ -63,6 +66,7 @@ public class SilnikFizyki extends Thread {
         Collision collision;
         for(int i = 0; i<collisionList.size(); i++){
             collision = collisionList.get(i);
+            if(collision.P == null) continue;
             //System.out.println("NORMAL: " + collision.collisionNormal);
             resolveDynamics((SRectangle) collision.A, (SRectangle) collision.B, collision, deltaTime);
             //resolveFriction((SRectangle) collision.A, (SRectangle) collision.B, collision);
@@ -131,17 +135,17 @@ public class SilnikFizyki extends Thread {
 
             A.dynamics.v.add(AimpulsV);
 
-            if(Math.abs(omegaValue/deltaTime) > 0.001)
+           // if(Math.abs(omegaValue/deltaTime) > 0.001)
                 A.dynamics.omega.z += (1.0/A.dynamics.I) * Vec2.cross(ra, impulse.neg());
 
 
-            if(A.dynamics.v.length() < 0.01){
-                A.dynamics.v = new Vector3D();
-            }
+            //if(A.dynamics.v.length() < 0.01)
+            //    A.dynamics.v = new Vector3D();
 
-            if(Math.abs(A.dynamics.omega.z) < 0.001){
-                //A.dynamics.omega.z = 0.0;
-            }
+
+            //if(Math.abs(A.dynamics.omega.z) < 0.001){
+           //     A.dynamics.omega.z = 0.0;
+           // }
 
 
 
@@ -157,17 +161,17 @@ public class SilnikFizyki extends Thread {
 
             B.dynamics.v.add(BimpulsV);
 
-            if(Math.abs(omegaValue/deltaTime) > 0.001)
+            //if(Math.abs(omegaValue/deltaTime) > 0.001)
                 B.dynamics.omega.z += (1.0/B.dynamics.I) * Vec2.cross(rb, impulse);
 
 
-            if(B.dynamics.v.length() < 0.01){
-                B.dynamics.v = new Vector3D();
-            }
+           // if(B.dynamics.v.length() < 0.01){
+           //     B.dynamics.v = new Vector3D();
+           // }
 
-            if(Math.abs(B.dynamics.omega.z) < 0.001){
-               // B.dynamics.omega.z = 0.0;
-            }
+           // if(Math.abs(B.dynamics.omega.z) < 0.001){
+          //     B.dynamics.omega.z = 0.0;
+          // }
 
 
 
@@ -187,25 +191,6 @@ public class SilnikFizyki extends Thread {
         float jt = -Vec2.dot( rv, t );
         jt /= invMassSum;
         //jt /= contactCount;
-
-        if(!A.isFixed){
-            if((A.dynamics.v.length() < 0.001) && Math.abs(A.dynamics.omega.z) < 0.001){
-                //System.out.println("ZABLOKUJ :  "+A.dynamics.v + "   OMEGA "+A.dynamics.omega.z);
-                A.dynamics.blokada = true;
-                A.dynamics.v = new Vector3D();
-                A.dynamics.omega = new Vector3D();
-
-            }
-        }
-
-        if(!B.isFixed){
-            if((B.dynamics.v.length() < 0.001) && Math.abs(B.dynamics.omega.z) < 0.001){
-                //System.out.println("B ZABLOKUJ :  "+B.dynamics.v + "   OMEGA "+B.dynamics.omega.z);
-                B.dynamics.blokada = true;
-                B.dynamics.v = new Vector3D();
-                B.dynamics.omega = new Vector3D();
-            }
-        }
 
 
         if(Math.abs(jt) < 0.00000001){
@@ -650,10 +635,257 @@ public class SilnikFizyki extends Thread {
 
 
     private Collision meshCollision(SRectangle rect0, SRectangle rect1) {
-       return GJK(rect0, rect1);
+       //return GJK(rect0, rect1);
+        return SAT(rect0, rect1);
     }
 
+    public Collision SAT(SRectangle rect0, SRectangle rect1) {
+        Vector3D normal = new Vector3D();
+        double depth    = Double.MAX_VALUE;
+        boolean onEdge  = false;
 
+        List<Vector3D> verticesA = new ArrayList<Vector3D>();
+        for(int i=0; i<rect0.meshCollider.pointList.size(); i++){
+            Vector3D vertex = rect0.meshCollider.pointList.get(i).copy();
+            vertex = Vector3D.add(vertex, rect0.location.position);
+
+            verticesA.add(vertex);
+        }
+
+        List<Vector3D> verticesB = new ArrayList<Vector3D>();
+        for(int i=0; i<rect1.meshCollider.pointList.size(); i++){
+            Vector3D vertex = rect1.meshCollider.pointList.get(i).copy();
+            vertex = Vector3D.add(vertex, rect1.location.position);
+
+            verticesB.add(vertex);
+        }
+
+        for(int i=0; i<verticesA.size(); i++){
+            Vector3D va = verticesA.get(i).copy();
+            Vector3D vb = verticesA.get((i+1) % verticesA.size()).copy();
+
+            Vector3D edge = Vector3D.minus(vb, va);
+            Vector3D axis = new Vector3D(edge.y, -edge.x);
+
+            double[] minMaxA = ProjectVertices(verticesA, axis);
+            double minA = minMaxA[0];
+            double maxA = minMaxA[1];
+
+            double[] minMaxB = ProjectVertices(verticesB, axis);
+            double minB = minMaxB[0];
+            double maxB = minMaxB[1];
+
+            //wyraźnie się rozchodzą
+            if(minA > maxB || minB > maxA){
+               return new Collision();
+            }
+
+            //ocho, mamy sygnał, że być MOŻE się stykają
+            if(minA == maxB || minB == maxA) onEdge = true;
+
+            double axisDepth = Double.min(maxB - minA, maxA - minB);
+
+            if(axisDepth < depth){
+                depth = axisDepth;
+                normal = axis;
+            }
+
+        }
+
+        for(int i=0; i<verticesB.size(); i++){
+            Vector3D va = verticesB.get(i).copy();
+            Vector3D vb = verticesB.get((i+1) % verticesB.size()).copy();
+
+            Vector3D edge = Vector3D.minus(vb, va);
+            Vector3D axis = new Vector3D(edge.y, -edge.x);
+
+            double[] minMaxA = ProjectVertices(verticesA, axis);
+            double minA = minMaxA[0];
+            double maxA = minMaxA[1];
+
+            double[] minMaxB = ProjectVertices(verticesB, axis);
+            double minB = minMaxB[0];
+            double maxB = minMaxB[1];
+
+            //wyraźnie się rozchodzą
+            if(minA > maxB || minB > maxA){
+                return new Collision();
+            }
+
+            //ocho, mamy sygnał, że być MOŻE się stykają
+            if(minA == maxB || minB == maxA) onEdge = true;
+
+            double axisDepth = Double.min(maxB - minA, maxA - minB);
+
+            if(axisDepth < depth){
+                depth = axisDepth;
+                normal = axis;
+            }
+        }
+
+        depth /= normal.length();
+        normal.normalize();
+
+        Vector3D direction = Vector3D.minus(rect1.location.position, rect0.location.position);
+
+        if(Vector3D.dot(direction, normal) < 0f){
+            normal.multiply(-1);
+        }
+
+        if(Double.compare(depth, 0) == 0) //todo: sprawdzić czy na pewno
+            onEdge = true;
+
+        //TODO: 1) zrobić rozsunięcie obiektów
+        if(depth > 0){
+            //Vector3D moveA = Vector3D.multiply(normal, -depth/2.0);
+            //rect0.location.position.add(moveA);
+
+            //Vector3D moveB = Vector3D.multiply(normal, depth/2.0);
+            //rect1.location.position.add(moveB);
+
+            if(rect0.isFixed){
+                rect1.location.position.add(Vector3D.multiply(normal, depth));
+            }
+            else if(rect1.isFixed){
+                rect0.location.position.add(Vector3D.multiply(normal, depth * (-1)));
+            }
+            else{
+                Vector3D moveA = Vector3D.multiply(normal, -depth/2.0);
+                rect0.location.position.add(moveA);
+
+                Vector3D moveB = Vector3D.multiply(normal, depth/2.0);
+                rect1.location.position.add(moveB);
+            }
+        }
+        //TODO: 2) przesłać do funkcji zaktualizowane obiekty
+        verticesA = new ArrayList<Vector3D>();
+        for(int i=0; i<rect0.meshCollider.pointList.size(); i++){
+            Vector3D vertex = rect0.meshCollider.pointList.get(i).copy();
+            vertex = Vector3D.add(vertex, rect0.location.position);
+
+            verticesA.add(vertex);
+        }
+
+        verticesB = new ArrayList<Vector3D>();
+        for(int i=0; i<rect1.meshCollider.pointList.size(); i++){
+            Vector3D vertex = rect1.meshCollider.pointList.get(i).copy();
+            vertex = Vector3D.add(vertex, rect1.location.position);
+
+            verticesB.add(vertex);
+        }
+
+
+
+
+
+        Collision collision = new Collision();
+        collision.A = rect0;
+        collision.B = rect1;
+        collision.collisionNormal = normal;
+        collision.onEdge = onEdge;
+        collision.collided = true;
+
+        System.out.println("=================================\nNORMAL: " + normal);
+        System.out.println("DEPTH : "+depth);
+
+        List<Vector3D> contactPoints = getContactPoints(verticesA, verticesB, normal, depth);
+        if(contactPoints.size() >0)
+            collision.P = contactPoints.get(0);
+
+
+        //System.out.println(contactPoints[0] + "\n" + contactPoints[1] + "\n" + contactPoints[2] + "\n" + contactPoints[3]);
+
+        return collision;
+    }
+
+    private List<Vector3D> getContactPoints(List<Vector3D> verticesA, List<Vector3D> verticesB, Vector3D normal, double depth) {
+        Vector3D a1 = verticesA.get(0);
+        double distA = Vector3D.dot(normal, a1);
+        Vector3D a2 = null;
+
+        for(int i=1; i<verticesA.size(); i++){
+            Vector3D vertice = verticesA.get(i);
+            double distance = Vector3D.dot(normal, vertice);
+
+            if(Double.compare(distance, distA) == 0){
+                a2 = vertice;
+            }else if(distance>distA){
+                distA = distance;
+                a1 = vertice;
+                a2 = null;
+            }
+        }
+
+        Vector3D b1 = verticesB.get(0);
+        double distB = Vector3D.dot(Vector3D.multiply(normal, -1), b1);
+        Vector3D b2 = null;
+
+        for(int i=1; i<verticesB.size(); i++){
+            Vector3D vertice = verticesB.get(i);
+            double distance = Vector3D.dot(Vector3D.multiply(normal, -1), vertice);
+
+            if(Double.compare(distance, distB) == 0){
+                b2 = vertice;
+            }else if(distance>distB){
+                distB = distance;
+                b1 = vertice;
+                b2 = null;
+            }
+        }
+
+        Vector3D[] pointsAlongFace = new Vector3D[]{a1, a2, b1, b2};
+
+        Vector3D faceVec = new Vector3D(-normal.y, normal.x);
+        Vector3D minVertice = pointsAlongFace[0];
+        Vector3D maxVertice = pointsAlongFace[0];
+        double minDist = Vector3D.dot(faceVec, minVertice);
+        double maxDist = Vector3D.dot(faceVec, maxVertice);
+
+        for(int i=1; i<pointsAlongFace.length; i++){
+            Vector3D vertex = pointsAlongFace[i];
+            if(vertex == null) continue;
+
+            double distance = Vector3D.dot(faceVec, vertex);
+            if(distance < minDist){
+                minDist = distance;
+                minVertice = vertex;
+            }else if(maxDist < distance){
+                maxDist = distance;
+                maxVertice = vertex;
+            }
+        }
+
+        List<Vector3D> contactPoints = new ArrayList<Vector3D>();
+
+        for(Vector3D point : pointsAlongFace){
+            if(point == null) continue;;
+            if(Vector3D.equall(point, minVertice)) continue;
+            if(Vector3D.equall(point, maxVertice)) continue;
+            contactPoints.add(point);
+            System.out.println("Hi, I'm the contact point!: "+point);
+        }
+
+
+
+
+        return contactPoints;
+    }
+
+    private double[] ProjectVertices(List<Vector3D> vetices, Vector3D axis){
+        double min = Double.MAX_VALUE;
+        double max = Double.MIN_VALUE;
+
+        for(int i=0; i<vetices.size(); i++){
+            Vector3D v = vetices.get(i);
+            double proj = Vector3D.dot(v, axis);
+
+            if(proj < min) { min = proj; }
+            if(proj > max) { max = proj; }
+        }
+
+
+        return new double[]{min, max};
+    }
 
     public Collision GJK(SRectangle rect0, SRectangle rect1){
         List<Vector3D> vertices = new ArrayList<Vector3D>();
