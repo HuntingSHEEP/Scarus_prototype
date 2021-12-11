@@ -37,11 +37,19 @@ public class hallo {
                 wierzcholki3.add( Vector3D.minus(new Vector3D(60,0), new Vector3D(40, 20)));
                 wierzcholki3.add(Vector3D.minus(new Vector3D(60,40), new Vector3D(40, 20)));
 
+                List<Vector3D> wierzcholki4 = new ArrayList<Vector3D>();
+                wierzcholki4.add(new Vector3D(-200, -100));
+                wierzcholki4.add(new Vector3D(300, 80));
+                wierzcholki4.add(new Vector3D(250, 100));
+                wierzcholki4.add(new Vector3D(-250, 100));
+
+
+
 
                 SRectangle bohater = new SRectangle(50,-230, 0, 50, 50);
-                SRectangle platforma = new SRectangle(0,0,0, 40, 40);
-                //SRectangle platforma = new SRectangle(250,-230,0, wierzcholki2);
-                SRectangle platforma1 = new SRectangle(30,20, 0, 4000, 40);
+                //SRectangle platforma = new SRectangle(0,0,0, 40, 40);
+                SRectangle platforma1 = new SRectangle(250,230,0, wierzcholki4);
+                //SRectangle platforma1 = new SRectangle(30,20, 0, 1000, 40);
                 SRectangle platforma2 = new SRectangle(40,20, 0, wierzcholki3);
 
 
@@ -53,7 +61,7 @@ public class hallo {
 
                 platforma1.setMass(1000000, true);
                 platforma1.dynamics.invI = 0;
-                platforma1.e = 0.0;
+                platforma1.e = 0.3;
 
                 //world.add(platforma);
                 world.add(platforma1);

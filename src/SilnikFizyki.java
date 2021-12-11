@@ -799,15 +799,20 @@ public class SilnikFizyki extends Thread {
     }
 
     private List<Vector3D> getContactPoints(List<Vector3D> verticesA, List<Vector3D> verticesB, Vector3D normal, double depth) {
+        double EPSILON = 1;
         Vector3D a1 = verticesA.get(0);
+        System.out.println("\nVETICE A: "+a1);
         double distA = Vector3D.dot(normal, a1);
         Vector3D a2 = null;
 
         for(int i=1; i<verticesA.size(); i++){
+
             Vector3D vertice = verticesA.get(i);
+            System.out.println("VETICE A: "+vertice);
             double distance = Vector3D.dot(normal, vertice);
 
-            if(Double.compare(distance, distA) == 0){
+
+            if(Math.abs(distance - distA) < EPSILON){
                 a2 = vertice;
             }else if(distance>distA){
                 distA = distance;
@@ -817,14 +822,16 @@ public class SilnikFizyki extends Thread {
         }
 
         Vector3D b1 = verticesB.get(0);
+        System.out.println("\nVETICE B: "+b1);
         double distB = Vector3D.dot(Vector3D.multiply(normal, -1), b1);
         Vector3D b2 = null;
 
         for(int i=1; i<verticesB.size(); i++){
             Vector3D vertice = verticesB.get(i);
+            System.out.println("VETICE B: "+vertice);
             double distance = Vector3D.dot(Vector3D.multiply(normal, -1), vertice);
 
-            if(Double.compare(distance, distB) == 0){
+            if(Math.abs(distance - distB) < EPSILON){
                 b2 = vertice;
             }else if(distance>distB){
                 distB = distance;
@@ -834,6 +841,7 @@ public class SilnikFizyki extends Thread {
         }
 
         Vector3D[] pointsAlongFace = new Vector3D[]{a1, a2, b1, b2};
+        System.out.println("POINTS ALONG FACE :\n"+pointsAlongFace[0]+"\n"+pointsAlongFace[1]+"\n"+pointsAlongFace[2]+"\n"+pointsAlongFace[3]);
 
         Vector3D faceVec = new Vector3D(-normal.y, normal.x);
         Vector3D minVertice = pointsAlongFace[0];
@@ -872,12 +880,15 @@ public class SilnikFizyki extends Thread {
     }
 
     private double[] ProjectVertices(List<Vector3D> vetices, Vector3D axis){
-        double min = Double.MAX_VALUE;
-        double max = Double.MIN_VALUE;
+        Vector3D v = vetices.get(0);
+        double proj = Vector3D.dot(v, axis);
 
-        for(int i=0; i<vetices.size(); i++){
-            Vector3D v = vetices.get(i);
-            double proj = Vector3D.dot(v, axis);
+        double min = proj;
+        double max = proj;
+
+        for(int i=1; i<vetices.size(); i++){
+            v = vetices.get(i);
+            proj = Vector3D.dot(v, axis);
 
             if(proj < min) { min = proj; }
             if(proj > max) { max = proj; }
